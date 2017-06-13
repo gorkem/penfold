@@ -34,6 +34,7 @@
   "scripts": {
     "compile": "tsc -watch -p ./",
     "test": "./node_modules/mocha/bin/mocha scripts/tests/**/*Test.js --reporter spec  --compilers coffee:coffee-script",
-    "tslint": "gulp tslint"
+    "tslint": "gulp tslint",
+    "start" : "./bin/hubot --adapter matteruser --name penfold"
   }
 }
