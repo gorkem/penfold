@@ -7,13 +7,13 @@ import * as mongoose from 'mongoose';
 import * as Agenda from 'agenda';
 import { IChannel, IReport } from './model';
 
-const mongoConnectionString = 'mongodb://localhost/test';
+const mongoConnectionString = 'mongodb://mongodb/penfolddb';
 
 export class StandupService implements IMessageConsumer {
   public static robot;
 
   constructor() {
-    mongoose.connect('mongodb://localhost/test');
+    mongoose.connect(mongoConnectionString);
     let db = mongoose.connection;
     db.on('error', console.error.bind(console, 'connection error:'));
     db.once('open', function () {
