@@ -7,7 +7,11 @@ import * as mongoose from 'mongoose';
 import * as Agenda from 'agenda';
 import { IChannel, IReport } from './model';
 
-const mongoConnectionString = 'mongodb://mongodb/penfolddb';
+const mongouser = process.env.MONGODB_USER;
+const mongopass = process.env.MONGODB_PASSWORD;
+const mongodb =  process.env.MONGODB_DATABASE;
+
+const mongoConnectionString = `mongodb://${mongouser}:${mongopass}@mongodb/${mongodb}`;
 
 export class StandupService implements IMessageConsumer {
   public static robot;
