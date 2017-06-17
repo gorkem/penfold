@@ -50,7 +50,7 @@ fi
 echo "---> Building your Node application from source"
 npm install
 echo "---> Building typescript"
-npm compile
+npm run build
 
 # Fix source directory permissions
 fix-permissions ./
