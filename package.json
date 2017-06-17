@@ -6,7 +6,6 @@
   "description": "Daily coding activities assistant",
   "dependencies": {
     "hubot": "^2.19.0",
-    "hubot-diagnostics": "0.0.1",
     "hubot-help": "^0.2.0",
     "hubot-matteruser": "^3.7.3",
     "hubot-scripts": "^2.17.2",
