@@ -8,7 +8,7 @@
 //   None
 //
 // commands:
-//   standup - Display latest reports from the team member
+//   standup - Display latest reports from the team members
 //   standup <standup report> - record daily standup
 //
 // Author:
@@ -20,7 +20,6 @@ import {Response,Robot} from './src/protocol';
 const standupService = new StandupService();
 
 function Penfold(robot: any) {
-  // robot.parseHelp();
   StandupService.robot=new Robot(robot);
 	robot.hear(/\!*standup/i, (res: any) => {
     standupService.receive(new Response(res));
