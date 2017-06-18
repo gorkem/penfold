@@ -22,7 +22,7 @@ const standupService = new StandupService();
 function Penfold(robot: any) {
   // robot.parseHelp();
   StandupService.robot=new Robot(robot);
-	robot.hear(/standup/i, (res: any) => {
+	robot.hear(/\!*standup/i, (res: any) => {
     standupService.receive(new Response(res));
 	});
 
