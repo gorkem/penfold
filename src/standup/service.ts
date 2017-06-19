@@ -2,6 +2,7 @@ import { IMessageConsumer, Response, Message, Robot} from '../protocol';
 import * as Report from './report';
 import * as Channel from './channel';
 import * as moment from 'moment';
+import * as logger from 'winston';
 import * as mongoose from 'mongoose';
 import { IChannel, IReport } from './model';
 
@@ -14,7 +15,7 @@ export class StandupService implements IMessageConsumer {
     let db = mongoose.connection;
     db.on('error', console.error.bind(console, 'connection error:'));
     db.once('open', function () {
-      console.log('connected to db');
+      logger.info('connected to db');
       // we're connected!
     });
   }
@@ -32,37 +33,42 @@ export class StandupService implements IMessageConsumer {
           this.addUserToChannelTeamIfNeeded(channel, response.message.userId)]);
         })
         .catch(error => {
-          console.log(error);
+          logger.error(error);
         });
     }
   }
 
   private printStandupReport(response: Response): void {
+    logger.debug('Print report for ', response.message);
     Channel.findOne({ id: response.message.room }).then(
       channel => {
+        logger.debug('channel found for '+response.message.room +' is '+channel);
         if (channel) {
-          let hour = moment().startOf('hour');
+          let mu = moment().utc();
+          let hour = mu.startOf('hour');
           let searchStart = hour.subtract(24, 'hour');
           Report.find({ "channel": channel.id, "created_at": { $gt: searchStart.toDate() } }).then(
             reports => {
+              logger.debug('reports found for channel ' + channel.id, reports);
               let reportMesage: string = '';
               if (reports && reports[0]) {
                 reports.forEach(report => {
                   let user = StandupService.robot.getUserForId(report.user);
                   let userName = user.realName || user.name;
                   let body = report.text;
-                  let time = moment().to(report.created_at);
+                  let time = moment().utc().to(moment(report.created_at));
                   reportMesage += `#### ${userName} reported ${time}\n ${body}\n`;
                 });
               }
               let queryUser = response.findUser(response.message.userId);
+              logger.debug('Sending report to user '+queryUser);
               StandupService.robot.messageRoom(queryUser.name, reportMesage);
             }
           );
         }
       }
     ).catch(error => {
-      console.log(error);
+      logger.error(error);
     });
 
   };
@@ -110,7 +116,8 @@ export class StandupService implements IMessageConsumer {
     report.channel = channelID;
     report.text = message.body.trim();
     report.user = message.userId;
-    report.created_at = new Date();
+    report.created_at = moment().utc().toDate();
+    logger.debug('saving report', report);
     return report.save();
   }
 }

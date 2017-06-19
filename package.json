@@ -13,7 +13,8 @@
     "moment": "^2.18.1",
     "moment-business":"3.0.1",
     "moment-parser": "^0.3.0",
-    "agenda":"^0.9.1"
+    "agenda":"^0.9.1",
+    "winston": "^2.3.1"
   },
   "engines": {
     "node": "0.10.x"
@@ -24,6 +25,7 @@
     "@types/mocha": "^2.2.40",
     "@types/chai": "3.4.35",
     "@types/mongoose": "4.7.11",
+    "@types/winston":"2.3.3",
     "gulp": "^3.9.1",
     "gulp-tslint": "^7.1.0",
     "tslint": "^4.4.2",

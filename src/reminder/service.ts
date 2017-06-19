@@ -2,6 +2,7 @@ import { IMessageConsumer, Response, Message} from '../protocol';
 import * as business from 'moment-business';
 import * as Agenda from 'agenda';
 import * as moment from 'moment';
+import * as logger from 'winston';
 import * as Channel from '../standup/channel';
 import * as Report from '../standup/report';
 
@@ -28,10 +29,10 @@ export class ReminderService implements IMessageConsumer {
     agenda.name('standup-service');
     agenda.define('checkStandups', checkStandups);
     agenda.on('ready', () => {
-      console.log('agenda ready');
+      logger.info('agenda ready');
       agenda.every('30 * * * 1-5', 'checkStandups');
       agenda.start();
-      console.log('agendas scheduled');
+      logger.info('agendas scheduled');
     });
   }
 
@@ -57,7 +58,7 @@ function checkStandups(job, done) {
                 if (user) {
                   ReminderService.robot.messageRoom(channel.id, `@${user.name} please remember to report your daily stand up`);
                 } else {
-                  console.log('No user name found for ' + userId);
+                  logger.info('No user name found for ' + userId);
                 }
               }
             });
