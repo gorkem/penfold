@@ -2,11 +2,15 @@ import { IMessageConsumer, Response, Message, Robot} from '../protocol';
 import * as Report from './report';
 import * as Channel from './channel';
 import * as moment from 'moment';
-import * as logger from 'winston';
+import * as winston from 'winston';
 import * as mongoose from 'mongoose';
 import { IChannel, IReport } from './model';
 
-logger.level='debug';
+let logger = new winston.Logger({
+  transports: [
+    new (winston.transports.Console)({ level: 'debug' }),
+  ]
+});
 
 export class StandupService implements IMessageConsumer {
   public static robot:Robot;
