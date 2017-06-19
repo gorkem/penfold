@@ -46,17 +46,17 @@ export class StandupService implements IMessageConsumer {
           Report.find({ "channel": channel.id, "created_at": { $gt: searchStart.toDate() } }).then(
             reports => {
               let reportMesage: string = '';
-              let user = null;
               if (reports && reports[0]) {
-                user = StandupService.robot.getUserForId(reports[0].user);
+                reports.forEach(report => {
+                  let user = StandupService.robot.getUserForId(report.user);
+                  let userName = user.realName || user.name;
+                  let body = report.text;
+                  let time = moment().to(report.created_at);
+                  reportMesage += `#### ${userName} reported ${time}\n ${body}\n`;
+                });
               }
-              reports.forEach(report => {
-                let userName = user.realName || user.name;
-                let body = report.text;
-                let time = moment().to(report.created_at);
-                reportMesage += `#### ${userName} reported ${time}\n ${body}\n`;
-              });
-              StandupService.robot.messageRoom(user.name, reportMesage);
+              let queryUser = response.findUser(response.message.userId);
+              StandupService.robot.messageRoom(queryUser.name, reportMesage);
             }
           );
         }
