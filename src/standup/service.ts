@@ -6,6 +6,7 @@ import * as logger from 'winston';
 import * as mongoose from 'mongoose';
 import { IChannel, IReport } from './model';
 
+logger.level='debug';
 
 export class StandupService implements IMessageConsumer {
   public static robot:Robot;
@@ -62,7 +63,7 @@ export class StandupService implements IMessageConsumer {
               }
               let queryUser = response.findUser(response.message.userId);
               logger.debug('Sending report to user '+queryUser);
-              StandupService.robot.messageRoom(queryUser.name, reportMesage);
+              response.send(reportMesage);
             }
           );
         }
