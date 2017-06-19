@@ -51,7 +51,7 @@ export class StandupService implements IMessageConsumer {
                 user = StandupService.robot.getUserForId(reports[0].user);
               }
               reports.forEach(report => {
-                let userName = user.realName;
+                let userName = user.realName || user.name;
                 let body = report.text;
                 let time = moment().to(report.created_at);
                 reportMesage += `#### ${userName} reported ${time}\n ${body}\n`;
