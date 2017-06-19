@@ -40,7 +40,7 @@ export class StandupService implements IMessageConsumer {
   }
 
   private printStandupReport(response: Response): void {
-    logger.debug('Print report for ', response.message);
+    logger.debug('Print report for ', response.message.room);
     Channel.findOne({ id: response.message.room }).then(
       channel => {
         logger.debug('channel found for '+response.message.room +' is '+channel);
@@ -50,9 +50,9 @@ export class StandupService implements IMessageConsumer {
           let searchStart = hour.subtract(24, 'hour');
           Report.find({ "channel": channel.id, "created_at": { $gt: searchStart.toDate() } }).then(
             reports => {
-              logger.debug('reports found for channel ' + channel.id, reports);
               let reportMesage: string = '';
               if (reports && reports[0]) {
+                logger.debug(reports.length+' reports found for channel ' + channel.id );
                 reports.forEach(report => {
                   let user = StandupService.robot.getUserForId(report.user);
                   let userName = user.realName || user.name;
@@ -62,7 +62,7 @@ export class StandupService implements IMessageConsumer {
                 });
               }
               let queryUser = response.findUser(response.message.userId);
-              logger.debug('Sending report to user '+queryUser);
+              logger.debug('Sending report to user ',queryUser);
               response.send(reportMesage);
             }
           );
