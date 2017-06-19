@@ -1,22 +1,15 @@
-import { IMessageConsumer, Response, Message, Robot } from '../protocol';
+import { IMessageConsumer, Response, Message, Robot} from '../protocol';
 import * as Report from './report';
 import * as Channel from './channel';
 import * as moment from 'moment';
-import * as business from 'moment-business';
 import * as mongoose from 'mongoose';
-import * as Agenda from 'agenda';
 import { IChannel, IReport } from './model';
 
-const mongouser = process.env.MONGODB_USER;
-const mongopass = process.env.MONGODB_PASSWORD;
-const mongodb =  process.env.MONGODB_DATABASE;
-
-const mongoConnectionString = `mongodb://${mongouser}:${mongopass}@mongodb/${mongodb}`;
 
 export class StandupService implements IMessageConsumer {
-  public static robot;
+  public static robot:Robot;
 
-  constructor() {
+  constructor(mongoConnectionString:string) {
     mongoose.connect(mongoConnectionString);
     let db = mongoose.connection;
     db.on('error', console.error.bind(console, 'connection error:'));
@@ -24,8 +17,6 @@ export class StandupService implements IMessageConsumer {
       console.log('connected to db');
       // we're connected!
     });
-    this.initAgenda();
-
   }
 
   receive(response: Response) {
@@ -57,7 +48,7 @@ export class StandupService implements IMessageConsumer {
               let reportMesage: string = '';
               let user = null;
               if (reports && reports[0]) {
-                user = response.findUser(reports[0].user);
+                user = StandupService.robot.getUserForId(reports[0].user);
               }
               reports.forEach(report => {
                 let userName = user.realName;
@@ -122,46 +113,4 @@ export class StandupService implements IMessageConsumer {
     report.created_at = new Date();
     return report.save();
   }
-
-  private initAgenda() {
-    let agenda = new Agenda({ db: { address: mongoConnectionString } });
-    agenda.name('standup-service');
-    agenda.define('checkStandups', checkStandups);
-    agenda.on('ready', () => {
-      console.log('agenda ready');
-      agenda.every('30 * * * 1-5', 'checkStandups');
-      agenda.start();
-      console.log('agendas scheduled');
-    });
-  }
-}
-
-
-// ##### Agenda processors #########
-function checkStandups(job, done) {
-  console.log('execute checkstandups');
-  let now = moment();
-  if (business.isWeekDay(now)) {
-    let checkback = now.isoWeekday() === 1 ? 48 : 24;
-    let querydate = now.subtract(checkback, 'hour');
-    Channel.where('team').exists().then(channels => {
-      for (let index = 0; index < channels.length; index++) {
-        let channel = channels[index];
-        channel.team.forEach(userId => {
-          Report.findOne({ "channel": channel.id, "user": userId, "created_at": { $gt: querydate.toDate() } })
-            .then(result => {
-              if (!result) {
-                let user = StandupService.robot.getUserForId(userId);
-                if (user) {
-                  StandupService.robot.messageRoom(channel.id, `@${user.name} please remember to report your daily stand up`);
-                } else {
-                  console.log('No user name found for ' + userId);
-                }
-              }
-            });
-        });
-      }
-    });
-  }
-  done();
 }
