@@ -62,7 +62,7 @@ export class StandupService implements IMessageConsumer {
                   let userName = user.realName || user.name;
                   let body = report.text;
                   let time = moment().utc().to(moment(report.created_at));
-                  reportMesage += `#### ${userName} reported ${time}\n ${body}\n`;
+                  reportMesage += `##### ${userName} reported ${time}\n ${body}\n`;
                 });
               }
               let queryUser = response.findUser(response.message.userId);
