@@ -49,33 +49,44 @@ export class StandupService implements IMessageConsumer {
       channel => {
         logger.debug('channel found for '+response.message.room +' is '+channel);
         if (channel) {
+         return Promise.resolve(channel);
+        }
+        let queryUser = StandupService.robot.getUserForId(response.message.userId);
+        logger.debug('Sending report to user ',queryUser);
+        response.send('Nothing noteworthy was reported lately.');
+        return Promise.reject('No channel');
+      }
+    ).then(channel => {
           let mu = moment().utc();
           let hour = mu.startOf('hour');
           let searchStart = hour.subtract(24, 'hour');
           Report.find({ "channel": channel.id, "created_at": { $gt: searchStart.toDate() } }).then(
             reports => {
-              let reportMesage: string = '';
+              let reportMesage: string = 'Nothing noteworthy was reported lately.';
               if (reports && reports[0]) {
+                reportMesage='';
                 logger.debug(reports.length+' reports found for channel ' + channel.id );
                 reports.forEach(report => {
                   let user = StandupService.robot.getUserForId(report.user);
-                  let userName = user.realName || user.name;
+                  let userName = user.name;
+                  if(user.realName && user.realName.length>0){
+                    userName = user.realName;
+                  }
                   let body = report.text;
                   let time = moment().utc().to(moment(report.created_at));
                   reportMesage += `##### ${userName} reported ${time}\n ${body}\n`;
                 });
               }
-              let queryUser = response.findUser(response.message.userId);
-              logger.debug('Sending report to user ',queryUser);
+              let queryUser = StandupService.robot.getUserForId(response.message.userId);
+              logger.debug('Sending report to user ', queryUser);
               response.send(reportMesage);
+              return Promise.reject('No reports');
             }
           );
-        }
-      }
-    ).catch(error => {
-      logger.error(error);
+    }).
+    catch(error => {
+      logger.warn(error);
     });
-
   };
 
   private saveChannelIfNotExists(response: Response): Promise<IChannel> {
