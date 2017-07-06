@@ -20,11 +20,11 @@
     "node": "0.10.x"
   },
   "devDependencies": {
-    "typescript": "^2.2.2",
+    "typescript": "^2.4.1",
     "@types/node": "7.0.12",
     "@types/mocha": "^2.2.40",
     "@types/chai": "3.4.35",
-    "@types/mongoose": "4.7.11",
+    "@types/mongoose": "^4.7.18",
     "@types/winston":"2.3.3",
     "gulp": "^3.9.1",
     "gulp-tslint": "^7.1.0",

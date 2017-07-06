@@ -1,5 +1,6 @@
+import * as mongoose from 'mongoose';
 
-export interface IChannel{
+export interface IChannel extends mongoose.Document{
   id:string;
   team:string[];
   meetingTime:Date;
