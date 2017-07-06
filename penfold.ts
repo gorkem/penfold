@@ -5,7 +5,9 @@
 //   None
 //
 // Configuration:
-//   None
+//   MONGODB_USER - The user used for mongo db based persistence
+//   MONGODB_PASSWORD - Password for the MONGODB_USER
+//   MONGODB_DATABASE - the name of the mongo db
 //
 // commands:
 //   standup - Display latest reports from the team members
