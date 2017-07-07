@@ -15,8 +15,8 @@ afterEach(() => {
 describe('Standup service', () => {
   it('should report "no reports"', () => {
     return room.user.say('testuser', '@hubot standup').then(() => {
-      expect(room.messages).to.eql([['testuser', '@hubot standup'],
-      ['hubot', 'No standup reports on room1']]);
+      expect(room.messages).to.eq([['testuser', '@hubot standup'],
+      ['hubot', 'Nothing noteworthy was reported lately.']]);
     }
     );
   });
