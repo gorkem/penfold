@@ -77,7 +77,7 @@ export class StandupService implements IMessageConsumer {
                 }
                 let body = report.text;
                 let time = moment().utc().to(moment(report.created_at));
-                reportMesage += `:memo: _${userName} reported ${time}_\n${body}\n***`;
+                reportMesage += `:memo: _${userName} reported ${time}_\n${body}\n***\n`;
               }
             });
           }
