@@ -26,6 +26,9 @@ Then you can interact with penfold by typing `penfold help`.
 ### Configuration
 Requires some environment variables to be set to work. See [penfold.ts](./penfold.ts) for configuration information. 
 
+When running locally setting `MONGODB_HOST` and `MONGODB_DATABASE` should be enough depending on the configuration for your local mongo installation.
+
+
 Also notice the environment variables required by the adapter. By default penfold uses mattermost and the configuration information for mattermost adapter can be found in [here](https://github.com/loafoe/hubot-matteruser#environment-variables)
 
 ### Deploying on Openshift
