@@ -3,7 +3,6 @@ import * as Report from './report';
 import * as Channel from './channel';
 import * as moment from 'moment';
 import * as winston from 'winston';
-import * as mongoose from 'mongoose';
 import { IChannel, IReport } from './model';
 
 let logger = new winston.Logger({
@@ -15,14 +14,8 @@ let logger = new winston.Logger({
 export class StandupService implements IMessageConsumer {
   public static robot:Robot;
 
-  constructor(mongoConnectionString:string) {
-    mongoose.connect(mongoConnectionString);
-    let db = mongoose.connection;
-    db.on('error', console.error.bind(console, 'connection error:'));
-    db.once('open', function () {
-      logger.info('connected to db');
-      // we're connected!
-    });
+  constructor() {
+    //empty
   }
 
   receive(response: Response) {
