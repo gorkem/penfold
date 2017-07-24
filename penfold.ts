@@ -22,7 +22,8 @@ import {ReminderService} from './src/reminder/service';
 import {Response,Robot} from './src/protocol';
 import * as mongoose from 'mongoose';
 import * as winston from 'winston';
-let logger = new winston.Logger({
+
+winston.configure({
   transports: [
     new (winston.transports.Console)({ level: 'debug' }),
   ]
@@ -38,12 +39,13 @@ if(mongouser){
   mongoauth =  `${mongouser}:${mongopass}@`;
 }
 
+
 const mongoConnectionString = `mongodb://${mongoauth}${mongohost}/${mongodb}`;
 mongoose.connect(mongoConnectionString, { server: { reconnectTries: Number.MAX_VALUE, keepAlive: 120  } });
 let db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
 db.once('open', function () {
-  logger.info('connected to db');
+  winston.info('connected to db');
 });
 const standupService = new StandupService();
 const reminderService = new ReminderService(mongoConnectionString);
