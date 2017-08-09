@@ -76,6 +76,10 @@ export class Message {
     return this.kernel.message.text.split(matches[0])[1];
   }
 
+  get text() :string{
+    return this.kernel.message.text;
+  }
+
   get room() {
     return this.kernel.message.room;
   }

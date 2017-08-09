@@ -19,6 +19,7 @@
 //
 import {StandupService} from './src/standup/service';
 import {ReminderService} from './src/reminder/service';
+import {IssueInfoService} from './src/github/issueInfo';
 import {Response,Robot} from './src/protocol';
 import * as mongoose from 'mongoose';
 import * as winston from 'winston';
@@ -49,12 +50,12 @@ db.once('open', function () {
 });
 const standupService = new StandupService();
 const reminderService = new ReminderService(mongoConnectionString);
+const issueInfoService = new IssueInfoService();
 
 
 function Penfold(robot: any) {
   StandupService.robot=new Robot(robot);
   ReminderService.robot = new Robot(robot);
-
   robot.router.all('*', (req,resp)=>{
     resp.send('hello');
   });
@@ -65,6 +66,10 @@ function Penfold(robot: any) {
 
   robot.respond(/away|vacation/i,(res:any)=>{
     reminderService.receive(new Response(res));
+  });
+
+  robot.hear(/https:\/\/github\.com\/.+?\/issues\/\d*/i, (res: any) =>{
+    issueInfoService.receive(new Response(res));
   });
 
 }
