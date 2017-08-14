@@ -1,3 +1,4 @@
+B
 # penfold
 
 penfold is a chat bot to assist the daily activities of a development team that is 
@@ -26,8 +27,15 @@ Then you can interact with penfold by typing `penfold help`.
 ### Configuration
 Requires some environment variables to be set to work. See [penfold.ts](./penfold.ts) for configuration information. 
 
-When running locally setting `MONGODB_HOST` and `MONGODB_DATABASE` should be enough depending on the configuration for your local mongo installation.
+When running locally setting `MONGODB_HOST` should be enough depending on the configuration for your local mongo installation.
 
+Example using docker based mongodb:
+
+```
+docker run -p 27017:27017 -d mongo
+export MONGODB_HOST=localhost
+bin/hubot
+```
 
 Also notice the environment variables required by the adapter. By default penfold uses mattermost and the configuration information for mattermost adapter can be found in [here](https://github.com/loafoe/hubot-matteruser#environment-variables)
 
