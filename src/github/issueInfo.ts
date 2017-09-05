@@ -1,6 +1,6 @@
 import { IMessageConsumer, Response} from '../protocol';
 import * as gh from 'github-url-to-object';
-import * as fetch from 'node-fetch';
+import * as Github from 'github';
 
 export class IssueInfoService implements IMessageConsumer {
 
@@ -9,16 +9,18 @@ export class IssueInfoService implements IMessageConsumer {
     let urls = response.message.text.match(/https:\/\/github\.com\/.+?\/issues\/\d*/g);
     urls.forEach(( url => {
       let ghUrl = gh(url);
-      let issueApiUrl = url.substring(url.lastIndexOf('/issues/'));
-      fetch(ghUrl.api_url + issueApiUrl)
+      let issueNumber = parseInt(/(?:\/issues\/)(\d+)/g.exec(url)[1]);
+      let options: Github.Options = Object.create(null);
+      options.debug = false;
+      let github = new Github(options);
+      let issueOpts: Github.IssuesGetParams = Object.create(null);
+      issueOpts.owner = ghUrl.user;
+      issueOpts.repo = ghUrl.repo;
+      issueOpts.number = issueNumber;
+      github.issues.get(issueOpts)
         .then(res => {
-          if (res.status === 200) {
-            return res.json();
-          }
-          return null;
-        })
-        .then(issue => {
-          if (issue) {
+          if (res.data) {
+            let issue = res.data;
             let infoMessage = `:${issue.state}_book: [${ghUrl.repo}#${issue.number}](${issue.html_url})\n${issue.title}\n`;
             if (issue.labels && issue.labels.length > 0) {
               for (let i = 0; i < issue.labels.length; i++) {
