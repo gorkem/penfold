@@ -7,7 +7,7 @@ export class IssueInfoService implements IMessageConsumer {
   receive(response: Response): void {
 
     let urls = response.message.text.match(/https:\/\/github\.com\/.+?\/issues\/\d*/g);
-    urls.forEach(( url => {
+    urls.filter((item, pos)=>{ return urls.indexOf(item) === pos; }).forEach(( url => {
       let ghUrl = gh(url);
       let issueNumber = parseInt(/(?:\/issues\/)(\d+)/g.exec(url)[1]);
       let options: Github.Options = Object.create(null);
