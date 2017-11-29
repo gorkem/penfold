@@ -1,0 +1,3 @@
+volumeClaims:
+  - name: mongodb
+    size: 1Gi
