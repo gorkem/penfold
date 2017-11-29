@@ -39,5 +39,16 @@ bin/hubot
 
 Also notice the environment variables required by the adapter. By default penfold uses mattermost and the configuration information for mattermost adapter can be found in [here](https://github.com/loafoe/hubot-matteruser#environment-variables)
 
-### Deploying on Openshift
+### Deploying on Openshift/Kubernetes
+
+Deployment requires [kedge](http://kedgeproject.org/) tool. See kedge project for getting started.
+
+Before running the project correct the values on `configmap.k.yml` and `penfold.k.yml` to be compatible with your environment.
+
+Use `oc` or  `kubectl` to connect to your cluster and create a project. 
+
+Run the following command to create necessary files
+
+    cd kedge
+    kedge apply -f pvc.k.yml -f secret.k.yml -f configmap.k.yml -f mongodb.k.yml -f penfold.k.yml  
 
