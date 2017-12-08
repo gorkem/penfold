@@ -60,7 +60,7 @@ export class StandupService implements IMessageConsumer {
                 reportedUser.push(report.user);
                 let user = StandupService.robot.getUserForId(report.user);
                 let userName = user.name;
-                if (user.realName && user.realName.length > 0) {
+                if (user.realName && user.realName.trim().length > 0) {
                   userName = user.realName;
                 }
                 let body = report.text;
