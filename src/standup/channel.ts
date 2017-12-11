@@ -6,9 +6,9 @@ let channelSchema = new mongoose.Schema({
   team: [String],
   meetingTime: Date
 });
-interface IChannelModel extends IChannel{};
+interface IChannelModel extends IChannel{}
 
-let Channel = mongoose.model<IChannelModel>("Channel", channelSchema);
+let Channel = mongoose.model<IChannelModel>('Channel', channelSchema);
 export = Channel;
 
 

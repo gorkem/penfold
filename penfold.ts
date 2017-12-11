@@ -54,8 +54,9 @@ const issueInfoService = new IssueInfoService();
 
 
 function Penfold(robot: any) {
-  StandupService.robot=new Robot(robot);
-  ReminderService.robot = new Robot(robot);
+  let aRobot = new Robot(robot);
+  StandupService.robot=aRobot;
+  ReminderService.robot = aRobot;
   robot.router.all('*', (req,resp)=>{
     resp.send('hello');
   });

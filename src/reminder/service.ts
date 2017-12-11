@@ -51,7 +51,7 @@ function checkStandups(job, done) {
       for (let index = 0; index < channels.length; index++) {
         let channel = channels[index];
         channel.team.forEach(userId => {
-          Report.findOne({ "channel": channel.id, "user": userId, "created_at": { $gt: querydate.toDate() } })
+          Report.findOne({ 'channel': channel.id, 'user': userId, 'created_at': { $gt: querydate.toDate() } })
             .then(result => {
               if (!result) {
                 let user = ReminderService.robot.getUserForId(userId);

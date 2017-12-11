@@ -71,7 +71,7 @@ export class Message {
   get body() {
     let matches: string[] = this.kernel.match;
     if (!matches.length) {
-      return "";
+      return '';
     }
     return this.kernel.message.text.split(matches[0])[1];
   }

@@ -48,7 +48,7 @@ export class StandupService implements IMessageConsumer {
       let mu = moment().utc();
       let hour = mu.startOf('hour');
       let searchStart = hour.subtract(24, 'hour');
-      Report.find({ "channel": channel.id, "created_at": { $gt: searchStart.toDate() } }).sort({ created_at: -1 }).then(
+      Report.find({ 'channel': channel.id, 'created_at': { $gt: searchStart.toDate() } }).sort({ created_at: -1 }).then(
         reports => {
           let reportMesage: string = 'Nothing noteworthy was reported lately.';
           if (reports && reports[0]) {
@@ -79,7 +79,7 @@ export class StandupService implements IMessageConsumer {
     catch(error => {
       logger.warn(error);
     });
-  };
+  }
 
   private saveChannelIfNotExists(response: Response): Promise<IChannel> {
     return new Promise((resolve, reject) => {

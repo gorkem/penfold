@@ -30,7 +30,7 @@
     "@types/winston":"2.3.3",
     "gulp": "^3.9.1",
     "gulp-tslint": "^7.1.0",
-    "tslint": "^4.4.2",
+    "tslint": "^5.8.0",
     "mocha": "3.2.0",
     "hubot-test-helper": "1.5.1",
     "chai": "3.5.0"

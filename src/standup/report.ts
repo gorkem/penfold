@@ -1,7 +1,7 @@
 import * as mongoose from 'mongoose';
 import {IReport} from './model';
 
-interface IReportModel extends IReport, mongoose.Document { };
+interface IReportModel extends IReport, mongoose.Document { }
 let reportSchema = new mongoose.Schema({
   user: String,
   text: String,
@@ -9,5 +9,5 @@ let reportSchema = new mongoose.Schema({
   channel: String,
 
 });
-let Report = mongoose.model<IReportModel>("Report", reportSchema);
+let Report = mongoose.model<IReportModel>('Report', reportSchema);
 export = Report;

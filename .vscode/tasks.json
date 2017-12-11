@@ -1,14 +1,13 @@
 {
   // See https://go.microsoft.com/fwlink/?LinkId=733558
   // for the documentation about the tasks.json format
-  "version": "0.1.0",
+  "version": "2.0.0",
   "command": "npm",
-  "isShellCommand": true,
-  "showOutput": "always",
   "suppressTaskName": true,
   "tasks": [
     {
       "taskName": "compile",
+      "type": "shell",
       // we run the custom script "compile" as defined in package.json
       "args": [
         "run",
@@ -16,11 +15,17 @@
         "--loglevel",
         "silent"
       ],
+      "presentation": {
+          "reveal": "silent"
+      },
       // The tsc compiler is started in watching mode
       "isBackground": true,
       // use the standard tsc in watch mode problem matcher to find compile problems in the output.
       "problemMatcher": "$tsc-watch",
-      "isBuildCommand": true
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
     },
      {
             "taskName": "tslint",
@@ -31,7 +36,10 @@
         {
           "taskName": "test",
           "command": "test",
-          "isTestCommand": true
+          "group": {
+            "kind": "test",
+            "isDefault": true
+          }
         }
   ]
 }
