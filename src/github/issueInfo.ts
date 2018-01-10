@@ -11,7 +11,6 @@ export class IssueInfoService implements IMessageConsumer {
       let ghUrl = gh(url);
       let issueNumber = parseInt(/(?:\/issues\/)(\d+)/g.exec(url)[1]);
       let options: Github.Options = Object.create(null);
-      options.debug = false;
       let github = new Github(options);
       let issueOpts: Github.IssuesGetParams = Object.create(null);
       issueOpts.owner = ghUrl.user;
