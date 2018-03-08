@@ -1,4 +1,4 @@
-FROM registry.centos.org/sclo/nodejs-6-centos7:latest
+FROM registry.centos.org/centos/nodejs-6-centos7:latest
 
 # Install dependencies for mattermost-integration-github
 RUN git clone https://github.com/gorkem/penfold &&\
