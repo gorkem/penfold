@@ -61,7 +61,7 @@ function Penfold(robot: any) {
     resp.send('hello');
   });
 
-	robot.hear(/\!*standup/i, (res: any) => {
+	robot.hear(/^\!*standup/i, (res: any) => {
     standupService.receive(new Response(res));
 	});
 
