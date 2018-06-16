@@ -5,18 +5,18 @@
   "author": "Gorkem Ercan <gorkem.ercan@gmail.com>",
   "description": "Daily coding activities assistant",
   "dependencies": {
+    "@octokit/rest": "^15.8.2",
+    "agenda": "^0.9.1",
+    "github-url-to-object": "4.0.4",
     "hubot": "^2.19.0",
     "hubot-help": "^0.2.2",
     "hubot-matteruser": "^4.4.0",
     "hubot-scripts": "^2.17.2",
-    "mongoose": "^4.13.9",
     "moment": "^2.20.1",
-    "moment-business":"3.0.1",
+    "moment-business": "3.0.1",
     "moment-parser": "^0.3.0",
-    "agenda":"^0.9.1",
-    "winston": "^2.4.0",
-    "github-url-to-object":"4.0.2",
-    "github": "^13.1.0"
+    "mongoose": "^4.13.9",
+    "winston": "^2.4.0"
   },
   "engines": {
     "node": "0.10.x"
@@ -27,7 +27,7 @@
     "@types/mocha": "^2.2.40",
     "@types/chai": "3.4.35",
     "@types/mongoose": "^4.7.18",
-    "@types/winston":"2.3.3",
+    "@types/winston": "2.3.3",
     "gulp": "^3.9.1",
     "gulp-tslint": "^7.1.0",
     "tslint": "^5.8.0",
@@ -37,10 +37,10 @@
   },
   "scripts": {
     "compile": "tsc -watch -p ./",
-    "build" : "tsc -p ./",
+    "build": "tsc -p ./",
     "test": "./node_modules/mocha/bin/mocha scripts/tests/**/*Test.js --reporter spec  --compilers coffee:coffee-script",
     "tslint": "gulp tslint",
-    "start" : "./bin/hubot --adapter matteruser --name penfold",
+    "start": "./bin/hubot --adapter matteruser --name penfold",
     "nodeshift": "nodeshift"
   }
 }

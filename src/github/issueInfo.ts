@@ -1,6 +1,6 @@
 import { IMessageConsumer, Response} from '../protocol';
 import * as gh from 'github-url-to-object';
-import * as Github from 'github';
+import * as Github from '@octokit/rest';
 
 export class IssueInfoService implements IMessageConsumer {
 
