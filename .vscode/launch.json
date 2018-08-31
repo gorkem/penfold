@@ -10,7 +10,7 @@
             "name": "Attach to Hubot",
             "sourceMaps": true,
 			      "outFiles": [ "${workspaceRoot}/scripts/**/*.js" ],
-			      "protocol": "legacy"
+			      "protocol": "inspector"
         }
     ]
 }
