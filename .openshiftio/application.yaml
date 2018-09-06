@@ -182,12 +182,10 @@ objects:
   - apiVersion: build.openshift.io/v1
     kind: BuildConfig
     metadata:
-      creationTimestamp: null
       labels:
         app: penfold-bot
       name: penfold-bot
     spec:
-      nodeSelector: null
       output:
         to:
           kind: ImageStreamTag
@@ -199,6 +197,7 @@ objects:
           uri: https://github.com/gorkem/penfold.git
         type: Git
       strategy:
+        type: Source
         sourceStrategy:
           env:
           - name: NPM_MIRROR
@@ -206,7 +205,6 @@ objects:
             kind: ImageStreamTag
             name: nodejs:6
             namespace: openshift
-        type: Source
       triggers:
       - github:
           secret: TtpYsucltvyHlUin8ACspxyyIfdML0yimxCey0Tf
