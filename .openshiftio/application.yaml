@@ -36,18 +36,19 @@ objects:
       requests:
         storage: 1Gi
   - apiVersion: v1
+    kind: Secret
     data:
       database-admin-password: aW5kR3RzNmlZdzZZTFZ3Nw==
       database-password: bFlMVXhSNjVwa0tKamdlMw==
       database-user: dXNlcldHWA==
       mattermost-password: null
-    kind: Secret
     metadata:
       creationTimestamp: null
       labels:
         app: ""
       name: penfold-bot
   - apiVersion: v1
+    kind: ConfigMap
     data:
       DATABASE_SERVICE_NAME: mongodb
       EXPRESS_PORT: "8080"
@@ -57,7 +58,6 @@ objects:
       MATTERMOST_USER: penfold
       MONGODB_DATABASE: penfolddb
       MONGODB_HOST: mongodb
-    kind: ConfigMap
     metadata:
       creationTimestamp: null
       labels:
@@ -182,9 +182,9 @@ objects:
   - apiVersion: build.openshift.io/v1
     kind: BuildConfig
     metadata:
+      name: penfold-bot
       labels:
         app: penfold-bot
-      name: penfold-bot
     spec:
       output:
         to:
@@ -203,13 +203,7 @@ objects:
             kind: ImageStreamTag
             name: nodejs:6
             namespace: openshift
-      triggers:
-      - github:
-          secret: TtpYsucltvyHlUin8ACspxyyIfdML0yimxCey0Tf
-        type: GitHub
-      - generic:
-          secret: pfYWfSAh2A7Duom4Xo03uRidUxVVuiUGKjGCUUFP
-        type: Generic
+      triggers: []
     status:
       lastVersion: 0
   - apiVersion: apps.openshift.io/v1
