@@ -3,6 +3,7 @@
 osio {
     ci {
         app = processTemplate([release_version: "1.0.${env.BUILD_NUMBER}"])
+        echo app
         build app: app
     }
 
