@@ -1,5 +1,5 @@
 #!/usr/bin/groovy
-@Library('github.com/fabric8io/fabric8-pipeline-library@nodejs')_
+@Library('github.com/hrishin/fabric8-pipeline-library@nodejs')_
 osio {
     ci {
         app = processTemplate([release_version: "1.0.${env.BUILD_NUMBER}"])
