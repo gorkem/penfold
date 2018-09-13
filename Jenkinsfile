@@ -5,7 +5,6 @@ osio {
 
     ci {
         app = processTemplate()
-        echo app
         build app: app
     }
 
