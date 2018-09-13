@@ -1,5 +1,5 @@
 #!/usr/bin/groovy
-@Library('github.com/fabric8io/fabric8-pipeline-library@nodejs')_
+@Library('github.com/fabric8io/osio-pipeline@master')_
 osio {
     config runtime: 'node'
 
