@@ -200,8 +200,8 @@ objects:
         type: Source
         sourceStrategy:
           from:
-            kind: ImageStreamTag
-            name: nodejs:6
+            kind: DockerImage
+            name: 'bucharestgold/centos7-s2i-nodejs:10.x'
             namespace: openshift
           incremental : true
       triggers: []
