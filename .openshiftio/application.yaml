@@ -179,7 +179,7 @@ objects:
         local: false
     status:
       dockerImageRepository: ""
-  - apiVersion: build.openshift.io/v1
+  - apiVersion: v1
     kind: BuildConfig
     metadata:
       name: penfold-bot
