@@ -203,6 +203,7 @@ objects:
             kind: ImageStreamTag
             name: nodejs:6
             namespace: openshift
+          incremental : true
       triggers: []
     status:
       lastVersion: 0
