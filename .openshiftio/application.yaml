@@ -71,33 +71,73 @@ objects:
         spec:
           containers:
             - readinessProbe:
-                httpGet:
-                  path: /api/health/readiness
-                  port: 8080
-                  scheme: HTTP
                 failureThreshold: 3
-                initialDelaySeconds: 10
-                periodSeconds: 5
+                initialDelaySeconds: 3
+                periodSeconds: 10
                 successThreshold: 1
-                timeoutSeconds: 1
-              livenessProbe:
-                httpGet:
-                  path: /api/health/liveness
+                tcpSocket:
                   port: 8080
-                  scheme: HTTP
-                failureThreshold: 2
-                initialDelaySeconds: 60
-                periodSeconds: 3
+                timeoutSeconds:
+              livenessProbe:
+                failureThreshold: 3
+                initialDelaySeconds: 30
+                periodSeconds: 10
                 successThreshold: 1
+                tcpSocket:
+                  port: 8080
                 timeoutSeconds: 1
-              image: ""
-              name: nodejs-health-check
+              env:
+              - name: DATABASE_SERVICE_NAME
+                value: mongodb
+              - name: MONGODB_USER
+                valueFrom:
+                  secretKeyRef:
+                    key: database-user
+                    name: penfold-bot
+              - name: MONGODB_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    key: database-password
+                    name: penfold-bot
+              - name: MONGODB_DATABASE
+                value: penfolddb
+              - name: MONGODB_ADMIN_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    key: database-admin-password
+                    name: penfold-bot
+              - name: MATTERMOST_HOST
+                value: chat.openshift.io
+              - name: MATTERMOST_GROUP
+                value: developers
+              - name: MATTERMOST_USER
+                value: penfold
+              - name: MATTERMOST_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    key: mattermost-password
+                    name: penfold-bot
+              - name: EXPRESS_PORT
+                value: "8080"
+              - name: HUBOT_LOG_LEVEL
+                value: debug
+              - name: MONGODB_HOST
+                value: mongodb
+              image: 172.30.208.107:5000/penfold/penfold-bot:latest
+              imagePullPolicy: IfNotPresent
+              name: penfold-bot
               securityContext:
                 privileged: false
+              resources:
+                limits:
+                  memory: 256Mi
               ports:
                 - containerPort: 8080
                   name: http
                   protocol: TCP
+          dnsPolicy: ClusterFirst
+          restartPolicy: Always
+          schedulerName: default-scheduler
         metadata:
           labels:
             app: nodejs-health-check
@@ -120,17 +160,3 @@ objects:
             from:
               kind: ImageStreamTag
               name: "penfold-bot${SUFFIX_NAME}:${RELEASE_VERSION}"
-  - apiVersion: v1
-    kind: Route
-    metadata:
-      labels:
-        project: nodejs-health-check
-        provider: nodeshift
-        version: ${RELEASE_VERSION}
-      name: nodejs-health-check${SUFFIX_NAME}
-    spec:
-      port:
-        targetPort: 8080
-      to:
-        kind: Service
-        name: nodejs-health-check${SUFFIX_NAME}
