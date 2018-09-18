@@ -13,7 +13,7 @@ export class ReminderService implements IMessageConsumer {
   private dbconn;
   constructor(dbConnectionString:string){
     this.dbconn = dbConnectionString;
-    // this.initAgenda();
+    this.initAgenda();
   }
 
   receive(response: Response): void {
