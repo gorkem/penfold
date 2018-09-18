@@ -16,14 +16,13 @@ export class StandupService implements IMessageConsumer {
   receive(response: Response) {
     if (!response.message.room) {
       response.send('Get a room!!');
-    }
-    else if (response.message.body.trim().length < 1) {
+    } else if (response.message.body.trim().length < 1) {
       this.printStandupReport(response);
     } else {//save a report
-      this.saveChannelIfNotExists(response)
+      this.updateChannel(response)
         .then((channel) => {
           return Promise.all([this.saveStandupReport(response),
-          this.addUserToChannelTeamIfNeeded(channel, response.message.userId)]);
+            this.addUserToChannelTeamIfNeeded(channel, response.message.userId)]);
         })
         .catch(error => {
           logger.error(error);
@@ -81,7 +80,7 @@ export class StandupService implements IMessageConsumer {
     });
   }
 
-  private saveChannelIfNotExists(response: Response): Promise<IChannel> {
+  private updateChannel(response: Response): Promise<IChannel> {
     return new Promise((resolve, reject) => {
       Channel.findOne({ id: response.message.room }, (error, channel) => {
         if (error) {
@@ -89,8 +88,13 @@ export class StandupService implements IMessageConsumer {
           return;
         }
         if (!channel) {
+          logger.debug('channel ' + response.message.room + ' does not exist yet. Saving it.');
           channel = new Channel();
           channel.id = response.message.room;
+          channel.team.push(response.message.userId);
+          return channel.save();
+        } else if (!channel.team.indexOf(response.message.userId)) { 
+          logger.debug('adding user ' + response.message.userId + ' to channel ' + response.message.room);
           channel.team.push(response.message.userId);
           return channel.save();
         }
