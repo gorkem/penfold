@@ -36,6 +36,34 @@ objects:
         requests:
           storage: 1Gi
     status: {}
+  - apiVersion: v1
+    kind: Secret
+    data:
+      database-admin-password: aW5kR3RzNmlZdzZZTFZ3Nw==
+      database-password: bFlMVXhSNjVwa0tKamdlMw==
+      database-user: dXNlcldHWA==
+      mattermost-password: null
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: ""
+      name: penfold-bot
+  - apiVersion: v1
+    kind: ConfigMap
+    data:
+      DATABASE_SERVICE_NAME: mongodb
+      EXPRESS_PORT: "8080"
+      HUBOT_LOG_LEVEL: debug
+      MATTERMOST_GROUP: developers
+      MATTERMOST_HOST: chat.openshift.io
+      MATTERMOST_USER: penfold
+      MONGODB_DATABASE: penfolddb
+      MONGODB_HOST: mongodb
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: ""
+      name: penfold-config
   - apiVersion: image.openshift.io/v1
     kind: ImageStream
     metadata:
