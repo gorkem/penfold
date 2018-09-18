@@ -1,0 +1,301 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: launchpad-builder
+  annotations:
+    description: This template creates a Build Configuration using an S2I builder.
+    tags: instant-app
+parameters:
+  - name: SUFFIX_NAME
+    description: The suffix name for the template objects
+    displayName: Suffix name
+  - name: RELEASE_VERSION
+    description: The release version number of application
+    displayName: Release version
+  - name: SOURCE_REPOSITORY_URL
+    description: The source URL for the application
+    displayName: Source URL
+    required: true
+  - name: SOURCE_REPOSITORY_REF
+    description: The branch name for the application
+    displayName: Source Branch
+    value: master
+    required: true
+objects:
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: ""
+      name: mongodb
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
+    status: {}
+  - apiVersion: v1
+    kind: Secret
+    data:
+      database-admin-password: aW5kR3RzNmlZdzZZTFZ3Nw==
+      database-password: bFlMVXhSNjVwa0tKamdlMw==
+      database-user: dXNlcldHWA==
+      mattermost-password: null
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: ""
+      name: penfold-bot
+  - apiVersion: v1
+    kind: ConfigMap
+    data:
+      DATABASE_SERVICE_NAME: mongodb
+      EXPRESS_PORT: "8080"
+      HUBOT_LOG_LEVEL: debug
+      MATTERMOST_GROUP: developers
+      MATTERMOST_HOST: chat.openshift.io
+      MATTERMOST_USER: penfold
+      MONGODB_DATABASE: penfolddb
+      MONGODB_HOST: mongodb
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: ""
+      name: penfold-config
+  - apiVersion: image.openshift.io/v1
+    kind: ImageStream
+    metadata:
+      name: penfold-bot${SUFFIX_NAME}
+      labels:
+        version: ${RELEASE_VERSION}
+    spec: {}
+  - apiVersion: v1
+    kind: BuildConfig
+    metadata:
+      name: penfold-bot${SUFFIX_NAME}
+      labels:
+          version: ${RELEASE_VERSION}
+    spec:
+      postCommit: {}
+      resources: {}
+      source:
+        git:
+          uri: '${SOURCE_REPOSITORY_URL}'
+          ref: '${SOURCE_REPOSITORY_REF}'
+        type: Git
+      strategy:
+        type: Source
+        sourceStrategy:
+          from:
+            kind: DockerImage
+            name: 'bucharestgold/centos7-s2i-nodejs:10.x'
+          incremental: true
+      output:
+        to:
+          kind: ImageStreamTag
+          name: 'penfold-bot${SUFFIX_NAME}:${RELEASE_VERSION}'
+      triggers: []
+    status:
+      lastVersion: 0
+  - apiVersion: v1
+    kind: DeploymentConfig
+    metadata:
+      name: penfold-bot${SUFFIX_NAME}
+      labels:
+        app: nodejs-health-check
+        provider: nodeshift
+        project: nodejs-health-check
+        version: ${RELEASE_VERSION}
+    spec:
+      template:
+        spec:
+          containers:
+            - readinessProbe:
+                failureThreshold: 3
+                initialDelaySeconds: 3
+                periodSeconds: 10
+                successThreshold: 1
+                tcpSocket:
+                  port: 8080
+                timeoutSeconds:
+              livenessProbe:
+                failureThreshold: 3
+                initialDelaySeconds: 30
+                periodSeconds: 10
+                successThreshold: 1
+                tcpSocket:
+                  port: 8080
+                timeoutSeconds: 1
+              env:
+              - name: DATABASE_SERVICE_NAME
+                value: mongodb
+              - name: MONGODB_USER
+                valueFrom:
+                  secretKeyRef:
+                    key: database-user
+                    name: penfold-bot
+              - name: MONGODB_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    key: database-password
+                    name: penfold-bot
+              - name: MONGODB_DATABASE
+                value: penfolddb
+              - name: MONGODB_ADMIN_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    key: database-admin-password
+                    name: penfold-bot
+              - name: MATTERMOST_HOST
+                value: chat.openshift.io
+              - name: MATTERMOST_GROUP
+                value: developers
+              - name: MATTERMOST_USER
+                value: penfold
+              - name: MATTERMOST_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    key: mattermost-password
+                    name: penfold-bot
+              - name: EXPRESS_PORT
+                value: "8080"
+              - name: HUBOT_LOG_LEVEL
+                value: debug
+              - name: MONGODB_HOST
+                value: mongodb
+              image: 172.30.208.107:5000/penfold/penfold-bot:latest
+              imagePullPolicy: IfNotPresent
+              name: penfold-bot
+              securityContext:
+                privileged: false
+              resources:
+                limits:
+                  memory: 256Mi
+              ports:
+                - containerPort: 8080
+                  name: http
+                  protocol: TCP
+          dnsPolicy: ClusterFirst
+          restartPolicy: Always
+          schedulerName: default-scheduler
+        metadata:
+          labels:
+            app: nodejs-health-check
+            project: nodejs-health-check
+            provider: nodeshift
+            version: ${RELEASE_VERSION}
+      replicas: 1
+      revisionHistoryLimit: 2
+      selector:
+        app: nodejs-health-check
+        project: nodejs-health-check
+        provider: nodeshift
+      triggers:
+        - type: ConfigChange
+        - type: ImageChange
+          imageChangeParams:
+            automatic: true
+            containerNames:
+              - penfold-bot
+            from:
+              kind: ImageStreamTag
+              name: "penfold-bot${SUFFIX_NAME}:${RELEASE_VERSION}"
+  - apiVersion: apps.openshift.io/v1
+    kind: DeploymentConfig
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: mongodb
+      name: mongodb
+    spec:
+      replicas: 1
+      strategy:
+        activeDeadlineSeconds: 21600
+        recreateParams:
+          timeoutSeconds: 600
+        resources: {}
+        type: Recreate
+      template:
+        metadata:
+          creationTimestamp: null
+          labels:
+            app: mongodb
+          name: mongodb
+        spec:
+          containers:
+          - env:
+            - name: MONGODB_USER
+              valueFrom:
+                secretKeyRef:
+                  key: database-user
+                  name: penfold-bot
+            - name: MONGODB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: database-password
+                  name: penfold-bot
+            - name: MONGODB_DATABASE
+              value: penfolddb
+            - name: MONGODB_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: database-admin-password
+                  name: penfold-bot
+            image: registry.access.redhat.com/rhscl/mongodb-32-rhel7:latest
+            imagePullPolicy: IfNotPresent
+            livenessProbe:
+              failureThreshold: 3
+              initialDelaySeconds: 30
+              periodSeconds: 10
+              successThreshold: 1
+              tcpSocket:
+                port: 27017
+              timeoutSeconds: 1
+            name: mongodb
+            ports:
+            - containerPort: 27017
+              protocol: TCP
+            readinessProbe:
+              exec:
+                command:
+                - /bin/sh
+                - -i
+                - -c
+                - mongo 127.0.0.1:27017/$MONGODB_DATABASE -u $MONGODB_USER -p $MONGODB_PASSWORD
+                  --eval="quit()"
+              failureThreshold: 3
+              initialDelaySeconds: 3
+              periodSeconds: 10
+              successThreshold: 1
+              timeoutSeconds: 1
+            resources:
+              limits:
+                memory: 512Mi
+            terminationMessagePath: /dev/termination-log
+            terminationMessagePolicy: File
+            volumeMounts:
+            - mountPath: /var/lib/mongodb/data
+              name: mongodb-data
+          dnsPolicy: ClusterFirst
+          restartPolicy: Always
+          schedulerName: default-scheduler
+          securityContext: {}
+          terminationGracePeriodSeconds: 30
+          volumes:
+          - name: mongodb-data
+            persistentVolumeClaim:
+              claimName: mongodb
+      test: false
+      triggers:
+      - imageChangeParams:
+          automatic: true
+          containerNames:
+          - mongodb
+          from:
+            kind: ImageStreamTag
+            name: mongodb:3.2
+            namespace: openshift
+        type: ImageChange
+      - type: ConfigChange

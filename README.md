@@ -1,4 +1,3 @@
-B
 # penfold
 
 penfold is a chat bot to assist the daily activities of a development team that is 
