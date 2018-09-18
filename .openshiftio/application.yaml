@@ -202,3 +202,100 @@ objects:
             from:
               kind: ImageStreamTag
               name: "penfold-bot${SUFFIX_NAME}:${RELEASE_VERSION}"
+  - apiVersion: apps.openshift.io/v1
+    kind: DeploymentConfig
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: mongodb
+      name: mongodb
+    spec:
+      replicas: 1
+      strategy:
+        activeDeadlineSeconds: 21600
+        recreateParams:
+          timeoutSeconds: 600
+        resources: {}
+        type: Recreate
+      template:
+        metadata:
+          creationTimestamp: null
+          labels:
+            app: mongodb
+          name: mongodb
+        spec:
+          containers:
+          - env:
+            - name: MONGODB_USER
+              valueFrom:
+                secretKeyRef:
+                  key: database-user
+                  name: penfold-bot
+            - name: MONGODB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: database-password
+                  name: penfold-bot
+            - name: MONGODB_DATABASE
+              value: penfolddb
+            - name: MONGODB_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: database-admin-password
+                  name: penfold-bot
+            image: registry.access.redhat.com/rhscl/mongodb-32-rhel7:latest
+            imagePullPolicy: IfNotPresent
+            livenessProbe:
+              failureThreshold: 3
+              initialDelaySeconds: 30
+              periodSeconds: 10
+              successThreshold: 1
+              tcpSocket:
+                port: 27017
+              timeoutSeconds: 1
+            name: mongodb
+            ports:
+            - containerPort: 27017
+              protocol: TCP
+            readinessProbe:
+              exec:
+                command:
+                - /bin/sh
+                - -i
+                - -c
+                - mongo 127.0.0.1:27017/$MONGODB_DATABASE -u $MONGODB_USER -p $MONGODB_PASSWORD
+                  --eval="quit()"
+              failureThreshold: 3
+              initialDelaySeconds: 3
+              periodSeconds: 10
+              successThreshold: 1
+              timeoutSeconds: 1
+            resources:
+              limits:
+                memory: 512Mi
+            terminationMessagePath: /dev/termination-log
+            terminationMessagePolicy: File
+            volumeMounts:
+            - mountPath: /var/lib/mongodb/data
+              name: mongodb-data
+          dnsPolicy: ClusterFirst
+          restartPolicy: Always
+          schedulerName: default-scheduler
+          securityContext: {}
+          terminationGracePeriodSeconds: 30
+          volumes:
+          - name: mongodb-data
+            persistentVolumeClaim:
+              claimName: mongodb
+      test: false
+      triggers:
+      - imageChangeParams:
+          automatic: true
+          containerNames:
+          - mongodb
+          from:
+            kind: ImageStreamTag
+            name: mongodb:3.2
+            namespace: openshift
+        type: ImageChange
+      - type: ConfigChange
