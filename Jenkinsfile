@@ -9,9 +9,6 @@ osio {
     }
 
     cd {
-        def cm = loadResources(file: ".openshiftio/service.yaml")
-
-
         app = processTemplate()
         build resources: app
         deploy resources: app, env: 'stage'
