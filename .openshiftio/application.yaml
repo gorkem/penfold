@@ -62,9 +62,8 @@ objects:
     metadata:
       name: penfold-bot${SUFFIX_NAME}
       labels:
-        app: nodejs-health-check
-        provider: nodeshift
-        project: nodejs-health-check
+        app: penfold-bot
+        project: penfold
         version: ${RELEASE_VERSION}
     spec:
       template:

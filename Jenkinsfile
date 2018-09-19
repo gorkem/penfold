@@ -1,17 +1,20 @@
 #!/usr/bin/groovy
-@Library('github.com/gorkem/osio-pipeline@master')_
+@Library('github.com/fabric8io/osio-pipeline@master')_
 osio {
     config runtime: 'node'
 
     ci {
         app = processTemplate()
-        build app: app
+        build resources: app
     }
 
     cd {
+        def cm = loadResources(file: ".openshiftio/service.yaml")
+
+
         app = processTemplate()
-        build app: app
-        deploy app: app, env: 'stage'
-        deploy app: app, env: 'run', approval: "manual"
+        build resources: app
+        deploy resources: app, env: 'stage'
+        deploy resources: app, env: 'run', approval: "manual"
     }
 }
