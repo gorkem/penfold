@@ -16,6 +16,10 @@ osio {
         )
         build resources: app
         deploy resources: app, env: 'stage'
-        deploy resources: app, env: 'run', approval: "manual"
+        spawn (image: 'oc`) {
+          sh """
+              oc apply -f ./openshiftio/service.yaml
+          """
+        }
     }
 }
