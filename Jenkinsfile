@@ -16,7 +16,7 @@ osio {
         )
         build resources: app
         deploy resources: app, env: 'stage'
-        spawn (image: 'oc`) {
+        spawn (image: 'oc') {
           sh """
               oc apply -f ./openshiftio/service.yaml
           """
