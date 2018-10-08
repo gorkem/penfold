@@ -15,11 +15,7 @@ osio {
           params: [ release_version: "1.0.${env.BUILD_NUMBER}" ]
         )
         build resources: app
-        deploy resources: app, env: 'stage'
-        spawn (image: 'oc') {
-          sh """
-              oc apply -f ./openshiftio/service.yaml
-          """
-        }
+        def service = loadResources(file: './.openshiftio/service.yaml')
+        deploy resources: [app, service], env: 'stage'
     }
 }
