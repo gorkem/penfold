@@ -21,7 +21,7 @@ items :
     database-admin-password: aW5kR3RzNmlZdzZZTFZ3Nw==
     database-password: bFlMVXhSNjVwa0tKamdlMw==
     database-user: dXNlcldHWA==
-    mattermost-password: ""
+    mattermost-password:  bFlMVXhSNjVwa0tKamdlMw==
   metadata:
     creationTimestamp: null
     labels:
