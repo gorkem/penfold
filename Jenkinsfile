@@ -16,6 +16,6 @@ osio {
         )
         build resources: app
         def service = loadResources(file: './.openshiftio/service.yaml')
-        deploy resources: [app, service], env: 'stage'
+        deploy resources: [service, app], env: 'stage'
     }
 }
