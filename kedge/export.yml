@@ -1,0 +1,1770 @@
+apiVersion: v1
+items:
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    annotations:
+      description: Defines how to deploy the database
+    creationTimestamp: null
+    generation: 1
+    labels:
+      app: penfold
+      template: nodejs-mongo-persistent
+    name: mongodb
+  spec:
+    replicas: 1
+    selector:
+      name: mongodb
+    strategy:
+      activeDeadlineSeconds: 21600
+      recreateParams:
+        timeoutSeconds: 600
+      resources: {}
+      type: Recreate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          name: mongodb
+        name: mongodb
+      spec:
+        containers:
+        - env:
+          - name: MONGODB_USER
+            valueFrom:
+              secretKeyRef:
+                key: database-user
+                name: penfold-bot
+          - name: MONGODB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: database-password
+                name: penfold-bot
+          - name: MONGODB_DATABASE
+            value: penfolddb
+          - name: MONGODB_ADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: database-admin-password
+                name: penfold-bot
+          image: docker-registry.default.svc:5000/openshift/mongodb@sha256:3054af88ae23fa65bb7b8411a12f9b1375dd4817d14a1a0642e5f9c5c2744959
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: 27017
+            timeoutSeconds: 1
+          name: mongodb
+          ports:
+          - containerPort: 27017
+            protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+              - /bin/sh
+              - -i
+              - -c
+              - mongo 127.0.0.1:27017/$MONGODB_DATABASE -u $MONGODB_USER -p $MONGODB_PASSWORD
+                --eval="quit()"
+            failureThreshold: 3
+            initialDelaySeconds: 3
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources:
+            limits:
+              memory: 512Mi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /var/lib/mongodb/data
+            name: mongodb-data
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - name: mongodb-data
+          persistentVolumeClaim:
+            claimName: mongodb
+    test: false
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - mongodb
+        from:
+          kind: ImageStreamTag
+          name: mongodb:3.2
+          namespace: openshift
+      type: ImageChange
+    - type: ConfigChange
+  status:
+    availableReplicas: 0
+    latestVersion: 0
+    observedGeneration: 0
+    replicas: 0
+    unavailableReplicas: 0
+    updatedReplicas: 0
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    annotations:
+      description: Defines how to deploy the application server
+    creationTimestamp: null
+    generation: 1
+    labels:
+      app: penfold
+      template: nodejs-mongo-persistent
+    name: penfold-bot
+  spec:
+    replicas: 1
+    selector:
+      name: penfold-bot
+    strategy:
+      activeDeadlineSeconds: 21600
+      recreateParams:
+        timeoutSeconds: 600
+      resources: {}
+      type: Recreate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          name: penfold-bot
+        name: penfold-bot
+      spec:
+        containers:
+        - env:
+          - name: DATABASE_SERVICE_NAME
+            value: mongodb
+          - name: MONGODB_USER
+            valueFrom:
+              secretKeyRef:
+                key: database-user
+                name: penfold-bot
+          - name: MONGODB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: database-password
+                name: penfold-bot
+          - name: MONGODB_DATABASE
+            value: penfolddb
+          - name: MONGODB_ADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: database-admin-password
+                name: penfold-bot
+          - name: MATTERMOST_HOST
+            value: chat.openshift.io
+          - name: MATTERMOST_GROUP
+            value: developers
+          - name: MATTERMOST_USER
+            value: penfold
+          - name: MATTERMOST_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: mattermost-password
+                name: penfold-bot
+          - name: EXPRESS_PORT
+            value: "8080"
+          - name: HUBOT_LOG_LEVEL
+            value: debug
+          - name: MONGODB_HOST
+            value: mongodb
+          image: docker-registry.default.svc:5000/penfold/penfold-bot@sha256:cc0964e7aecbaceefd79cbc66762918dea2e80fa1b0baa779f2bc89ab2a5e362
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: 8080
+            timeoutSeconds: 3
+          name: nodejs-mongo-persistent
+          ports:
+          - containerPort: 8080
+            protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 3
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: 8080
+            timeoutSeconds: 3
+          resources:
+            limits:
+              memory: 512Mi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+    test: false
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - nodejs-mongo-persistent
+        from:
+          kind: ImageStreamTag
+          name: penfold-bot:latest
+          namespace: penfold
+      type: ImageChange
+    - type: ConfigChange
+  status:
+    availableReplicas: 0
+    latestVersion: 0
+    observedGeneration: 0
+    replicas: 0
+    unavailableReplicas: 0
+    updatedReplicas: 0
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    annotations:
+      description: Defines how to build the application
+    creationTimestamp: null
+    labels:
+      app: penfold
+      template: nodejs-mongo-persistent
+    name: penfold-bot
+  spec:
+    nodeSelector: null
+    output:
+      to:
+        kind: ImageStreamTag
+        name: penfold-bot:latest
+    postCommit: {}
+    resources: {}
+    runPolicy: Serial
+    source:
+      git:
+        uri: https://github.com/gorkem/penfold.git
+      type: Git
+    strategy:
+      sourceStrategy:
+        env:
+        - name: NPM_MIRROR
+        from:
+          kind: ImageStreamTag
+          name: nodejs:6
+          namespace: openshift
+      type: Source
+    triggers:
+    - github:
+        secret: TtpYsucltvyHlUin8ACspxyyIfdML0yimxCey0Tf
+      type: GitHub
+    - generic:
+        secret: pfYWfSAh2A7Duom4Xo03uRidUxVVuiUGKjGCUUFP
+      type: Generic
+    - imageChange: {}
+      type: ImageChange
+    - type: ConfigChange
+  status:
+    lastVersion: 0
+- apiVersion: v1
+  kind: Build
+  metadata:
+    annotations:
+      openshift.io/build-config.name: penfold-bot
+      openshift.io/build.clone-of: penfold-bot-47
+      openshift.io/build.number: "48"
+      openshift.io/build.pod-name: penfold-bot-48-build
+    creationTimestamp: null
+    labels:
+      app: penfold
+      buildconfig: penfold-bot
+      openshift.io/build-config.name: penfold-bot
+      openshift.io/build.start-policy: Serial
+      template: nodejs-mongo-persistent
+    name: penfold-bot-48
+    ownerReferences:
+    - apiVersion: build.openshift.io/v1
+      controller: true
+      kind: BuildConfig
+      name: penfold-bot
+      uid: ad757e07-52f2-11e7-aa56-1250f17a13c8
+  spec:
+    nodeSelector: null
+    output:
+      pushSecret:
+        name: builder-dockercfg-73fnb
+      to:
+        kind: ImageStreamTag
+        name: penfold-bot:latest
+    postCommit: {}
+    resources: {}
+    revision:
+      git:
+        author:
+          email: misevskia@gmail.com
+          name: Angel Misevski
+        commit: c8a641952d193458adedcaa56dd2cd9a29ed671e
+        committer:
+          email: gorkem.ercan@gmail.com
+          name: Gorkem Ercan
+        message: Modify standup command to only trigger when standup is first word
+          (#6)
+      type: Git
+    serviceAccount: builder
+    source:
+      git:
+        uri: https://github.com/gorkem/penfold.git
+      type: Git
+    strategy:
+      sourceStrategy:
+        env:
+        - name: NPM_MIRROR
+        from:
+          kind: DockerImage
+          name: registry.access.redhat.com/rhscl/nodejs-6-rhel7@sha256:739c2663e323dc717f5d1e5f29f2301a3be608c1cf2a19842178b2c6d3de0231
+      type: Source
+    triggeredBy: null
+  status:
+    config:
+      name: penfold-bot
+    output:
+      to:
+        imageDigest: sha256:60bee3d14d69295f08440024470692a1d099c011536ed6538adbbe408916cce1
+    outputDockerImageReference: docker-registry.default.svc:5000/penfold/penfold-bot:latest
+    phase: New
+    stages:
+    - durationMilliseconds: 1301
+      name: FetchInputs
+      startTime: 2018-06-16T15:29:01Z
+      steps:
+      - durationMilliseconds: 1301
+        name: FetchGitSource
+        startTime: 2018-06-16T15:29:01Z
+    - durationMilliseconds: 6840
+      name: CommitContainer
+      startTime: 2018-06-16T15:30:00Z
+      steps:
+      - durationMilliseconds: 6840
+        name: CommitContainer
+        startTime: 2018-06-16T15:30:00Z
+    - durationMilliseconds: 61482
+      name: Assemble
+      startTime: 2018-06-16T15:29:06Z
+      steps:
+      - durationMilliseconds: 61482
+        name: AssembleBuildScripts
+        startTime: 2018-06-16T15:29:06Z
+    - durationMilliseconds: 13004
+      name: PushImage
+      startTime: 2018-06-16T15:30:08Z
+      steps:
+      - durationMilliseconds: 13004
+        name: PushImage
+        startTime: 2018-06-16T15:30:08Z
+- apiVersion: v1
+  kind: Build
+  metadata:
+    annotations:
+      openshift.io/build-config.name: penfold-bot
+      openshift.io/build.number: "50"
+      openshift.io/build.pod-name: penfold-bot-50-build
+    creationTimestamp: null
+    labels:
+      app: penfold
+      buildconfig: penfold-bot
+      openshift.io/build-config.name: penfold-bot
+      openshift.io/build.start-policy: Serial
+      template: nodejs-mongo-persistent
+    name: penfold-bot-50
+    ownerReferences:
+    - apiVersion: build.openshift.io/v1
+      controller: true
+      kind: BuildConfig
+      name: penfold-bot
+      uid: ad757e07-52f2-11e7-aa56-1250f17a13c8
+  spec:
+    nodeSelector: null
+    output:
+      pushSecret:
+        name: builder-dockercfg-73fnb
+      to:
+        kind: ImageStreamTag
+        name: penfold-bot:latest
+    postCommit: {}
+    resources: {}
+    revision:
+      git:
+        author:
+          email: gorkem.ercan@gmail.com
+          name: Gorkem Ercan
+        commit: 88c3e79965f85967e119575bf3c1ec4f5923e9f1
+        committer:
+          email: gorkem.ercan@gmail.com
+          name: Gorkem Ercan
+        message: update dependencies
+      type: Git
+    serviceAccount: builder
+    source:
+      git:
+        uri: https://github.com/gorkem/penfold.git
+      type: Git
+    strategy:
+      sourceStrategy:
+        env:
+        - name: NPM_MIRROR
+        from:
+          kind: DockerImage
+          name: registry.access.redhat.com/rhscl/nodejs-6-rhel7@sha256:739c2663e323dc717f5d1e5f29f2301a3be608c1cf2a19842178b2c6d3de0231
+      type: Source
+    triggeredBy:
+    - message: Manually triggered
+  status:
+    config:
+      name: penfold-bot
+    output:
+      to:
+        imageDigest: sha256:cc0964e7aecbaceefd79cbc66762918dea2e80fa1b0baa779f2bc89ab2a5e362
+    outputDockerImageReference: docker-registry.default.svc:5000/penfold/penfold-bot:latest
+    phase: New
+    stages:
+    - durationMilliseconds: 338
+      name: FetchInputs
+      startTime: 2018-06-16T16:43:19Z
+      steps:
+      - durationMilliseconds: 338
+        name: FetchGitSource
+        startTime: 2018-06-16T16:43:19Z
+    - durationMilliseconds: 6409
+      name: CommitContainer
+      startTime: 2018-06-16T16:44:19Z
+      steps:
+      - durationMilliseconds: 6409
+        name: CommitContainer
+        startTime: 2018-06-16T16:44:19Z
+    - durationMilliseconds: 62148
+      name: Assemble
+      startTime: 2018-06-16T16:43:24Z
+      steps:
+      - durationMilliseconds: 62148
+        name: AssembleBuildScripts
+        startTime: 2018-06-16T16:43:24Z
+    - durationMilliseconds: 11312
+      name: PushImage
+      startTime: 2018-06-16T16:44:26Z
+      steps:
+      - durationMilliseconds: 11312
+        name: PushImage
+        startTime: 2018-06-16T16:44:26Z
+- apiVersion: v1
+  kind: Build
+  metadata:
+    annotations:
+      openshift.io/build-config.name: penfold-bot
+      openshift.io/build.number: "54"
+      openshift.io/build.pod-name: penfold-bot-54-build
+    creationTimestamp: null
+    labels:
+      app: penfold
+      buildconfig: penfold-bot
+      openshift.io/build-config.name: penfold-bot
+      openshift.io/build.start-policy: Serial
+      template: nodejs-mongo-persistent
+    name: penfold-bot-54
+    ownerReferences:
+    - apiVersion: build.openshift.io/v1
+      controller: true
+      kind: BuildConfig
+      name: penfold-bot
+      uid: ad757e07-52f2-11e7-aa56-1250f17a13c8
+  spec:
+    nodeSelector: null
+    output:
+      pushSecret:
+        name: builder-dockercfg-73fnb
+      to:
+        kind: ImageStreamTag
+        name: penfold-bot:latest
+    postCommit: {}
+    resources: {}
+    revision:
+      git:
+        author:
+          email: obsidian-leadership@redhat.com
+          name: openshiftio-launchpad
+        commit: 049b3245db5d72d86fc83f067c4e87ae66470c7e
+        committer:
+          email: obsidian-leadership@redhat.com
+          name: openshiftio-launchpad
+        message: Initial commit
+      type: Git
+    serviceAccount: builder
+    source:
+      git:
+        uri: https://github.com/gorkem/penfold.git
+      type: Git
+    strategy:
+      sourceStrategy:
+        env:
+        - name: NPM_MIRROR
+        from:
+          kind: DockerImage
+          name: docker-registry.default.svc:5000/openshift/nodejs@sha256:eda9def5f3ebdfeacf5014578642f39ff8299ad92ac2748caa3bd5a8c5e2aa7b
+        pullSecret:
+          name: builder-dockercfg-73fnb
+      type: Source
+    triggeredBy:
+    - imageChangeBuild:
+        fromRef:
+          kind: ImageStreamTag
+          name: nodejs:6
+          namespace: openshift
+        imageID: docker-registry.default.svc:5000/openshift/nodejs@sha256:eda9def5f3ebdfeacf5014578642f39ff8299ad92ac2748caa3bd5a8c5e2aa7b
+      message: Image change
+  status:
+    config:
+      name: penfold-bot
+    logSnippet: "Registry server Address: \nRegistry server User Name: serviceaccount\nRegistry
+      server Email: serviceaccount@example.org\nRegistry server Password: <<non-empty>>\nerror:
+      build error: Failed to push image: After retrying 6...ial tcp 172.30.208.107:5000:
+      getsockopt: connection refused"
+    message: Failed to push the image to the registry.
+    output: {}
+    outputDockerImageReference: docker-registry.default.svc:5000/penfold/penfold-bot:latest
+    phase: New
+    reason: PushImageToRegistryFailed
+    stages:
+    - durationMilliseconds: 627824
+      name: FetchInputs
+      startTime: 2018-09-10T21:39:14Z
+      steps:
+      - durationMilliseconds: 1121
+        name: FetchGitSource
+        startTime: 2018-09-10T21:39:14Z
+      - durationMilliseconds: 415
+        name: FetchGitSource
+        startTime: 2018-09-10T21:49:41Z
+    - durationMilliseconds: 27186
+      name: CommitContainer
+      startTime: 2018-09-10T21:40:34Z
+      steps:
+      - durationMilliseconds: 27186
+        name: CommitContainer
+        startTime: 2018-09-10T21:40:34Z
+    - durationMilliseconds: 91241
+      name: Assemble
+      startTime: 2018-09-10T21:39:32Z
+      steps:
+      - durationMilliseconds: 91241
+        name: AssembleBuildScripts
+        startTime: 2018-09-10T21:39:32Z
+    - durationMilliseconds: 530621
+      name: PushImage
+      startTime: 2018-09-10T21:41:03Z
+      steps:
+      - durationMilliseconds: 530621
+        name: PushImage
+        startTime: 2018-09-10T21:41:03Z
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    annotations:
+      app.kubernetes.io/component-source-type: local
+      app.kubernetes.io/url: file:///Users/gercan/jnk
+    creationTimestamp: null
+    generation: 1
+    labels:
+      app: app
+      app.kubernetes.io/component-name: nodejs
+      app.kubernetes.io/component-type: nodejs
+      app.kubernetes.io/component-version: latest
+      app.kubernetes.io/name: app
+    name: nodejs-app
+  spec:
+    lookupPolicy:
+      local: false
+  status:
+    dockerImageRepository: ""
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    annotations:
+      description: Keeps track of changes in the application image
+    creationTimestamp: null
+    generation: 1
+    labels:
+      app: penfold
+      template: nodejs-mongo-persistent
+    name: penfold-bot
+  spec:
+    lookupPolicy:
+      local: false
+    tags:
+    - annotations: null
+      from:
+        kind: DockerImage
+        name: docker-registry.default.svc:5000/penfold/penfold-bot:latest
+      generation: null
+      importPolicy: {}
+      name: latest
+      referencePolicy:
+        type: ""
+  status:
+    dockerImageRepository: ""
+- apiVersion: v1
+  kind: Route
+  metadata:
+    annotations:
+      openshift.io/host.generated: "true"
+    creationTimestamp: null
+    labels:
+      app: penfold
+      template: nodejs-mongo-persistent
+    name: penfold-bot
+  spec:
+    host: penfold-bot-penfold.1d35.starter-us-east-1.openshiftapps.com
+    to:
+      kind: Service
+      name: penfold-bot
+      weight: 100
+    wildcardPolicy: None
+  status:
+    ingress:
+    - conditions:
+      - lastTransitionTime: 2018-04-17T13:04:30Z
+        status: "True"
+        type: Admitted
+      host: penfold-bot-penfold.1d35.starter-us-east-1.openshiftapps.com
+      routerCanonicalHostname: elb.1d35.starter-us-east-1.openshiftapps.com
+      routerName: router
+      wildcardPolicy: None
+- apiVersion: v1
+  kind: Pod
+  metadata:
+    annotations:
+      kubernetes.io/limit-ranger: 'LimitRanger plugin set: cpu request for container
+        mongodb; cpu limit for container mongodb'
+      openshift.io/deployment-config.latest-version: "12"
+      openshift.io/deployment-config.name: mongodb
+      openshift.io/deployment.name: mongodb-12
+      openshift.io/scc: restricted
+    creationTimestamp: null
+    generateName: mongodb-12-
+    labels:
+      deployment: mongodb-12
+      deploymentconfig: mongodb
+      name: mongodb
+    ownerReferences:
+    - apiVersion: v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: ReplicationController
+      name: mongodb-12
+      uid: b6972d66-b541-11e8-9103-12d641ec7610
+  spec:
+    containers:
+    - env:
+      - name: MONGODB_USER
+        valueFrom:
+          secretKeyRef:
+            key: database-user
+            name: penfold-bot
+      - name: MONGODB_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            key: database-password
+            name: penfold-bot
+      - name: MONGODB_DATABASE
+        value: penfolddb
+      - name: MONGODB_ADMIN_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            key: database-admin-password
+            name: penfold-bot
+      image: docker-registry.default.svc:5000/openshift/mongodb@sha256:3054af88ae23fa65bb7b8411a12f9b1375dd4817d14a1a0642e5f9c5c2744959
+      imagePullPolicy: Always
+      livenessProbe:
+        failureThreshold: 3
+        initialDelaySeconds: 30
+        periodSeconds: 10
+        successThreshold: 1
+        tcpSocket:
+          port: 27017
+        timeoutSeconds: 1
+      name: mongodb
+      ports:
+      - containerPort: 27017
+        protocol: TCP
+      readinessProbe:
+        exec:
+          command:
+          - /bin/sh
+          - -i
+          - -c
+          - mongo 127.0.0.1:27017/$MONGODB_DATABASE -u $MONGODB_USER -p $MONGODB_PASSWORD
+            --eval="quit()"
+        failureThreshold: 3
+        initialDelaySeconds: 3
+        periodSeconds: 10
+        successThreshold: 1
+        timeoutSeconds: 1
+      resources:
+        limits:
+          cpu: "1"
+          memory: 512Mi
+        requests:
+          cpu: 20m
+          memory: 256Mi
+      securityContext:
+        capabilities:
+          drop:
+          - KILL
+          - MKNOD
+          - SETGID
+          - SETUID
+        runAsUser: 1106310000
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: File
+      volumeMounts:
+      - mountPath: /var/lib/mongodb/data
+        name: mongodb-data
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: default-token-4254m
+        readOnly: true
+    dnsPolicy: ClusterFirst
+    imagePullSecrets:
+    - name: default-dockercfg-24638
+    nodeName: ip-172-31-58-15.ec2.internal
+    nodeSelector:
+      type: compute
+    restartPolicy: Always
+    schedulerName: default-scheduler
+    securityContext:
+      fsGroup: 1106310000
+      seLinuxOptions:
+        level: s0:c326,c180
+    serviceAccount: default
+    serviceAccountName: default
+    terminationGracePeriodSeconds: 30
+    tolerations:
+    - effect: NoSchedule
+      key: node.kubernetes.io/memory-pressure
+      operator: Exists
+    volumes:
+    - name: mongodb-data
+      persistentVolumeClaim:
+        claimName: mongodb
+    - name: default-token-4254m
+      secret:
+        defaultMode: 420
+        secretName: default-token-4254m
+  status:
+    phase: Pending
+    qosClass: Burstable
+- apiVersion: v1
+  kind: Pod
+  metadata:
+    annotations:
+      kubernetes.io/limit-ranger: 'LimitRanger plugin set: cpu request for container
+        nodejs-mongo-persistent; cpu limit for container nodejs-mongo-persistent'
+      openshift.io/deployment-config.latest-version: "42"
+      openshift.io/deployment-config.name: penfold-bot
+      openshift.io/deployment.name: penfold-bot-42
+      openshift.io/scc: restricted
+    creationTimestamp: null
+    generateName: penfold-bot-42-
+    labels:
+      deployment: penfold-bot-42
+      deploymentconfig: penfold-bot
+      name: penfold-bot
+    ownerReferences:
+    - apiVersion: v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: ReplicationController
+      name: penfold-bot-42
+      uid: 3ad3fb3d-8159-11e8-a8ba-1250f17a13c8
+  spec:
+    containers:
+    - env:
+      - name: DATABASE_SERVICE_NAME
+        value: mongodb
+      - name: MONGODB_USER
+        valueFrom:
+          secretKeyRef:
+            key: database-user
+            name: penfold-bot
+      - name: MONGODB_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            key: database-password
+            name: penfold-bot
+      - name: MONGODB_DATABASE
+        value: penfolddb
+      - name: MONGODB_ADMIN_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            key: database-admin-password
+            name: penfold-bot
+      - name: MATTERMOST_HOST
+        value: chat.openshift.io
+      - name: MATTERMOST_GROUP
+        value: developers
+      - name: MATTERMOST_USER
+        value: penfold
+      - name: MATTERMOST_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            key: mattermost-password
+            name: penfold-bot
+      - name: EXPRESS_PORT
+        value: "8080"
+      - name: HUBOT_LOG_LEVEL
+        value: debug
+      - name: MONGODB_HOST
+        value: mongodb
+      image: docker-registry.default.svc:5000/penfold/penfold-bot@sha256:cc0964e7aecbaceefd79cbc66762918dea2e80fa1b0baa779f2bc89ab2a5e362
+      imagePullPolicy: Always
+      livenessProbe:
+        failureThreshold: 3
+        initialDelaySeconds: 30
+        periodSeconds: 10
+        successThreshold: 1
+        tcpSocket:
+          port: 8080
+        timeoutSeconds: 3
+      name: nodejs-mongo-persistent
+      ports:
+      - containerPort: 8080
+        protocol: TCP
+      readinessProbe:
+        failureThreshold: 3
+        initialDelaySeconds: 3
+        periodSeconds: 10
+        successThreshold: 1
+        tcpSocket:
+          port: 8080
+        timeoutSeconds: 3
+      resources:
+        limits:
+          cpu: "1"
+          memory: 512Mi
+        requests:
+          cpu: 20m
+          memory: 256Mi
+      securityContext:
+        capabilities:
+          drop:
+          - KILL
+          - MKNOD
+          - SETGID
+          - SETUID
+        runAsUser: 1106310000
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: File
+      volumeMounts:
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: default-token-4254m
+        readOnly: true
+    dnsPolicy: ClusterFirst
+    imagePullSecrets:
+    - name: default-dockercfg-24638
+    nodeName: ip-172-31-60-115.ec2.internal
+    nodeSelector:
+      type: compute
+    restartPolicy: Always
+    schedulerName: default-scheduler
+    securityContext:
+      fsGroup: 1106310000
+      seLinuxOptions:
+        level: s0:c326,c180
+    serviceAccount: default
+    serviceAccountName: default
+    terminationGracePeriodSeconds: 30
+    tolerations:
+    - effect: NoSchedule
+      key: node.kubernetes.io/memory-pressure
+      operator: Exists
+    volumes:
+    - name: default-token-4254m
+      secret:
+        defaultMode: 420
+        secretName: default-token-4254m
+  status:
+    phase: Pending
+    qosClass: Burstable
+- apiVersion: v1
+  kind: ReplicationController
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/desired-replicas: "1"
+      openshift.io/deployer-pod.created-at: 2018-08-29 01:28:45 +0000 UTC
+      openshift.io/deployer-pod.name: mongodb-11-deploy
+      openshift.io/deployment-config.latest-version: "11"
+      openshift.io/deployment-config.name: mongodb
+      openshift.io/deployment.cancelled: "true"
+      openshift.io/deployment.phase: Failed
+      openshift.io/deployment.replicas: "0"
+      openshift.io/deployment.status-reason: The deployment was cancelled by the user
+      openshift.io/encoded-deployment-config: |
+        {"kind":"DeploymentConfig","apiVersion":"v1","metadata":{"name":"mongodb","namespace":"penfold","selfLink":"/apis/apps.openshift.io/v1/namespaces/penfold/deploymentconfigs/mongodb","uid":"ad7de878-52f2-11e7-aa56-1250f17a13c8","resourceVersion":"3047304288","generation":49,"creationTimestamp":"2017-06-17T00:19:50Z","labels":{"app":"penfold","template":"nodejs-mongo-persistent"},"annotations":{"description":"Defines how to deploy the database"}},"spec":{"strategy":{"type":"Recreate","recreateParams":{"timeoutSeconds":600},"resources":{},"activeDeadlineSeconds":21600},"triggers":[{"type":"ImageChange","imageChangeParams":{"automatic":true,"containerNames":["mongodb"],"from":{"kind":"ImageStreamTag","namespace":"openshift","name":"mongodb:3.2"},"lastTriggeredImage":"docker-registry.default.svc:5000/openshift/mongodb@sha256:28cc7ec05d96b72720226e3b6a410a50c2ab3503815f178c70aee0064b6e6deb"}},{"type":"ConfigChange"}],"replicas":1,"test":false,"selector":{"name":"mongodb"},"template":{"metadata":{"name":"mongodb","creationTimestamp":null,"labels":{"name":"mongodb"}},"spec":{"volumes":[{"name":"mongodb-data","persistentVolumeClaim":{"claimName":"mongodb"}}],"containers":[{"name":"mongodb","image":"docker-registry.default.svc:5000/openshift/mongodb@sha256:28cc7ec05d96b72720226e3b6a410a50c2ab3503815f178c70aee0064b6e6deb","ports":[{"containerPort":27017,"protocol":"TCP"}],"env":[{"name":"MONGODB_USER","valueFrom":{"secretKeyRef":{"name":"penfold-bot","key":"database-user"}}},{"name":"MONGODB_PASSWORD","valueFrom":{"secretKeyRef":{"name":"penfold-bot","key":"database-password"}}},{"name":"MONGODB_DATABASE","value":"penfolddb"},{"name":"MONGODB_ADMIN_PASSWORD","valueFrom":{"secretKeyRef":{"name":"penfold-bot","key":"database-admin-password"}}}],"resources":{"limits":{"memory":"512Mi"}},"volumeMounts":[{"name":"mongodb-data","mountPath":"/var/lib/mongodb/data"}],"livenessProbe":{"tcpSocket":{"port":27017},"initialDelaySeconds":30,"timeoutSeconds":1,"periodSeconds":10,"successThreshold":1,"failureThreshold":3},"readinessProbe":{"exec":{"command":["/bin/sh","-i","-c","mongo 127.0.0.1:27017/$MONGODB_DATABASE -u $MONGODB_USER -p $MONGODB_PASSWORD --eval=\"quit()\""]},"initialDelaySeconds":3,"timeoutSeconds":1,"periodSeconds":10,"successThreshold":1,"failureThreshold":3},"terminationMessagePath":"/dev/termination-log","terminationMessagePolicy":"File","imagePullPolicy":"IfNotPresent"}],"restartPolicy":"Always","terminationGracePeriodSeconds":30,"dnsPolicy":"ClusterFirst","securityContext":{},"schedulerName":"default-scheduler"}}},"status":{"latestVersion":11,"observedGeneration":48,"replicas":1,"updatedReplicas":0,"availableReplicas":0,"unavailableReplicas":1,"details":{"message":"manual change","causes":[{"type":"Manual"}]},"conditions":[{"type":"Progressing","status":"False","lastUpdateTime":"2018-06-21T13:30:16Z","lastTransitionTime":"2018-06-21T13:30:16Z","reason":"ProgressDeadlineExceeded","message":"replication controller \"mongodb-10\" has failed progressing"},{"type":"Available","status":"False","lastUpdateTime":"2018-08-28T01:13:54Z","lastTransitionTime":"2018-08-28T01:13:54Z","message":"Deployment config does not have minimum availability."}]}}
+    creationTimestamp: null
+    generation: 1
+    labels:
+      app: penfold
+      openshift.io/deployment-config.name: mongodb
+      template: nodejs-mongo-persistent
+    name: mongodb-11
+    ownerReferences:
+    - apiVersion: apps.openshift.io/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: DeploymentConfig
+      name: mongodb
+      uid: ad7de878-52f2-11e7-aa56-1250f17a13c8
+  spec:
+    replicas: 0
+    selector:
+      deployment: mongodb-11
+      deploymentconfig: mongodb
+      name: mongodb
+    template:
+      metadata:
+        annotations:
+          openshift.io/deployment-config.latest-version: "11"
+          openshift.io/deployment-config.name: mongodb
+          openshift.io/deployment.name: mongodb-11
+        creationTimestamp: null
+        labels:
+          deployment: mongodb-11
+          deploymentconfig: mongodb
+          name: mongodb
+      spec:
+        containers:
+        - env:
+          - name: MONGODB_USER
+            valueFrom:
+              secretKeyRef:
+                key: database-user
+                name: penfold-bot
+          - name: MONGODB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: database-password
+                name: penfold-bot
+          - name: MONGODB_DATABASE
+            value: penfolddb
+          - name: MONGODB_ADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: database-admin-password
+                name: penfold-bot
+          image: docker-registry.default.svc:5000/openshift/mongodb@sha256:28cc7ec05d96b72720226e3b6a410a50c2ab3503815f178c70aee0064b6e6deb
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: 27017
+            timeoutSeconds: 1
+          name: mongodb
+          ports:
+          - containerPort: 27017
+            protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+              - /bin/sh
+              - -i
+              - -c
+              - mongo 127.0.0.1:27017/$MONGODB_DATABASE -u $MONGODB_USER -p $MONGODB_PASSWORD
+                --eval="quit()"
+            failureThreshold: 3
+            initialDelaySeconds: 3
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources:
+            limits:
+              memory: 512Mi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /var/lib/mongodb/data
+            name: mongodb-data
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - name: mongodb-data
+          persistentVolumeClaim:
+            claimName: mongodb
+  status:
+    replicas: 0
+- apiVersion: v1
+  kind: ReplicationController
+  metadata:
+    annotations:
+      openshift.io/deployer-pod.completed-at: 2018-09-10 22:05:05 +0000 UTC
+      openshift.io/deployer-pod.created-at: 2018-09-10 21:37:31 +0000 UTC
+      openshift.io/deployer-pod.name: mongodb-12-deploy
+      openshift.io/deployment-config.latest-version: "12"
+      openshift.io/deployment-config.name: mongodb
+      openshift.io/deployment.phase: Complete
+      openshift.io/deployment.replicas: "1"
+      openshift.io/deployment.status-reason: image change
+      openshift.io/encoded-deployment-config: |
+        {"kind":"DeploymentConfig","apiVersion":"apps.openshift.io/v1","metadata":{"name":"mongodb","namespace":"penfold","selfLink":"/apis/apps.openshift.io/v1/namespaces/penfold/deploymentconfigs/mongodb","uid":"ad7de878-52f2-11e7-aa56-1250f17a13c8","resourceVersion":"3127817049","generation":54,"creationTimestamp":"2017-06-17T00:19:50Z","labels":{"app":"penfold","template":"nodejs-mongo-persistent"},"annotations":{"description":"Defines how to deploy the database"}},"spec":{"strategy":{"type":"Recreate","recreateParams":{"timeoutSeconds":600},"resources":{},"activeDeadlineSeconds":21600},"triggers":[{"type":"ImageChange","imageChangeParams":{"automatic":true,"containerNames":["mongodb"],"from":{"kind":"ImageStreamTag","namespace":"openshift","name":"mongodb:3.2"},"lastTriggeredImage":"docker-registry.default.svc:5000/openshift/mongodb@sha256:3054af88ae23fa65bb7b8411a12f9b1375dd4817d14a1a0642e5f9c5c2744959"}},{"type":"ConfigChange"}],"replicas":1,"test":false,"selector":{"name":"mongodb"},"template":{"metadata":{"name":"mongodb","creationTimestamp":null,"labels":{"name":"mongodb"}},"spec":{"volumes":[{"name":"mongodb-data","persistentVolumeClaim":{"claimName":"mongodb"}}],"containers":[{"name":"mongodb","image":"docker-registry.default.svc:5000/openshift/mongodb@sha256:3054af88ae23fa65bb7b8411a12f9b1375dd4817d14a1a0642e5f9c5c2744959","ports":[{"containerPort":27017,"protocol":"TCP"}],"env":[{"name":"MONGODB_USER","valueFrom":{"secretKeyRef":{"name":"penfold-bot","key":"database-user"}}},{"name":"MONGODB_PASSWORD","valueFrom":{"secretKeyRef":{"name":"penfold-bot","key":"database-password"}}},{"name":"MONGODB_DATABASE","value":"penfolddb"},{"name":"MONGODB_ADMIN_PASSWORD","valueFrom":{"secretKeyRef":{"name":"penfold-bot","key":"database-admin-password"}}}],"resources":{"limits":{"memory":"512Mi"}},"volumeMounts":[{"name":"mongodb-data","mountPath":"/var/lib/mongodb/data"}],"livenessProbe":{"tcpSocket":{"port":27017},"initialDelaySeconds":30,"timeoutSeconds":1,"periodSeconds":10,"successThreshold":1,"failureThreshold":3},"readinessProbe":{"exec":{"command":["/bin/sh","-i","-c","mongo 127.0.0.1:27017/$MONGODB_DATABASE -u $MONGODB_USER -p $MONGODB_PASSWORD --eval=\"quit()\""]},"initialDelaySeconds":3,"timeoutSeconds":1,"periodSeconds":10,"successThreshold":1,"failureThreshold":3},"terminationMessagePath":"/dev/termination-log","terminationMessagePolicy":"File","imagePullPolicy":"IfNotPresent"}],"restartPolicy":"Always","terminationGracePeriodSeconds":30,"dnsPolicy":"ClusterFirst","securityContext":{},"schedulerName":"default-scheduler"}}},"status":{"latestVersion":12,"observedGeneration":53,"replicas":1,"updatedReplicas":0,"availableReplicas":1,"unavailableReplicas":0,"details":{"message":"image change","causes":[{"type":"ImageChange","imageTrigger":{"from":{"kind":"DockerImage","name":"docker-registry.default.svc:5000/openshift/mongodb@sha256:3054af88ae23fa65bb7b8411a12f9b1375dd4817d14a1a0642e5f9c5c2744959"}}}]},"conditions":[{"type":"Progressing","status":"False","lastUpdateTime":"2018-08-29T01:33:30Z","lastTransitionTime":"2018-08-29T01:33:30Z","reason":"RolloutCancelled","message":"rollout of replication controller \"mongodb-11\" was cancelled"},{"type":"Available","status":"True","lastUpdateTime":"2018-09-07T21:15:48Z","lastTransitionTime":"2018-09-07T21:15:48Z","message":"Deployment config has minimum availability."}],"readyReplicas":1}}
+    creationTimestamp: null
+    generation: 1
+    labels:
+      app: penfold
+      openshift.io/deployment-config.name: mongodb
+      template: nodejs-mongo-persistent
+    name: mongodb-12
+    ownerReferences:
+    - apiVersion: apps.openshift.io/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: DeploymentConfig
+      name: mongodb
+      uid: ad7de878-52f2-11e7-aa56-1250f17a13c8
+  spec:
+    replicas: 1
+    selector:
+      deployment: mongodb-12
+      deploymentconfig: mongodb
+      name: mongodb
+    template:
+      metadata:
+        annotations:
+          openshift.io/deployment-config.latest-version: "12"
+          openshift.io/deployment-config.name: mongodb
+          openshift.io/deployment.name: mongodb-12
+        creationTimestamp: null
+        labels:
+          deployment: mongodb-12
+          deploymentconfig: mongodb
+          name: mongodb
+      spec:
+        containers:
+        - env:
+          - name: MONGODB_USER
+            valueFrom:
+              secretKeyRef:
+                key: database-user
+                name: penfold-bot
+          - name: MONGODB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: database-password
+                name: penfold-bot
+          - name: MONGODB_DATABASE
+            value: penfolddb
+          - name: MONGODB_ADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: database-admin-password
+                name: penfold-bot
+          image: docker-registry.default.svc:5000/openshift/mongodb@sha256:3054af88ae23fa65bb7b8411a12f9b1375dd4817d14a1a0642e5f9c5c2744959
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: 27017
+            timeoutSeconds: 1
+          name: mongodb
+          ports:
+          - containerPort: 27017
+            protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+              - /bin/sh
+              - -i
+              - -c
+              - mongo 127.0.0.1:27017/$MONGODB_DATABASE -u $MONGODB_USER -p $MONGODB_PASSWORD
+                --eval="quit()"
+            failureThreshold: 3
+            initialDelaySeconds: 3
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources:
+            limits:
+              memory: 512Mi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /var/lib/mongodb/data
+            name: mongodb-data
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - name: mongodb-data
+          persistentVolumeClaim:
+            claimName: mongodb
+  status:
+    replicas: 0
+- apiVersion: v1
+  kind: ReplicationController
+  metadata:
+    annotations:
+      openshift.io/deployer-pod.name: mongodb-7-deploy
+      openshift.io/deployment-config.latest-version: "7"
+      openshift.io/deployment-config.name: mongodb
+      openshift.io/deployment.phase: Complete
+      openshift.io/deployment.replicas: "0"
+      openshift.io/deployment.status-reason: manual change
+      openshift.io/encoded-deployment-config: |
+        {"kind":"DeploymentConfig","apiVersion":"v1","metadata":{"name":"mongodb","namespace":"penfold","selfLink":"/apis/apps.openshift.io/v1/namespaces/penfold/deploymentconfigs/mongodb","uid":"ad7de878-52f2-11e7-aa56-1250f17a13c8","resourceVersion":"1720884723","generation":16,"creationTimestamp":"2017-06-17T00:19:50Z","labels":{"app":"penfold","template":"nodejs-mongo-persistent"},"annotations":{"description":"Defines how to deploy the database"}},"spec":{"strategy":{"type":"Recreate","recreateParams":{"timeoutSeconds":600},"resources":{},"activeDeadlineSeconds":21600},"triggers":[{"type":"ImageChange","imageChangeParams":{"automatic":true,"containerNames":["mongodb"],"from":{"kind":"ImageStreamTag","namespace":"openshift","name":"mongodb:3.2"},"lastTriggeredImage":"registry.access.redhat.com/rhscl/mongodb-32-rhel7@sha256:ecff0e57fddae1440f312a7c446628aec9951d49e8f9862e30940e98ee7e667b"}},{"type":"ConfigChange"}],"replicas":0,"test":false,"selector":{"name":"mongodb"},"template":{"metadata":{"name":"mongodb","creationTimestamp":null,"labels":{"name":"mongodb"}},"spec":{"volumes":[{"name":"mongodb-data","persistentVolumeClaim":{"claimName":"mongodb"}}],"containers":[{"name":"mongodb","image":"registry.access.redhat.com/rhscl/mongodb-32-rhel7@sha256:ecff0e57fddae1440f312a7c446628aec9951d49e8f9862e30940e98ee7e667b","ports":[{"containerPort":27017,"protocol":"TCP"}],"env":[{"name":"MONGODB_USER","valueFrom":{"secretKeyRef":{"name":"penfold-bot","key":"database-user"}}},{"name":"MONGODB_PASSWORD","valueFrom":{"secretKeyRef":{"name":"penfold-bot","key":"database-password"}}},{"name":"MONGODB_DATABASE","value":"penfolddb"},{"name":"MONGODB_ADMIN_PASSWORD","valueFrom":{"secretKeyRef":{"name":"penfold-bot","key":"database-admin-password"}}}],"resources":{"limits":{"memory":"512Mi"}},"volumeMounts":[{"name":"mongodb-data","mountPath":"/var/lib/mongodb/data"}],"livenessProbe":{"tcpSocket":{"port":27017},"initialDelaySeconds":30,"timeoutSeconds":1,"periodSeconds":10,"successThreshold":1,"failureThreshold":3},"readinessProbe":{"exec":{"command":["/bin/sh","-i","-c","mongo 127.0.0.1:27017/$MONGODB_DATABASE -u $MONGODB_USER -p $MONGODB_PASSWORD --eval=\"quit()\""]},"initialDelaySeconds":3,"timeoutSeconds":1,"periodSeconds":10,"successThreshold":1,"failureThreshold":3},"terminationMessagePath":"/dev/termination-log","terminationMessagePolicy":"File","imagePullPolicy":"IfNotPresent"}],"restartPolicy":"Always","terminationGracePeriodSeconds":30,"dnsPolicy":"ClusterFirst","securityContext":{},"schedulerName":"default-scheduler"}}},"status":{"latestVersion":7,"observedGeneration":15,"replicas":0,"updatedReplicas":0,"availableReplicas":0,"unavailableReplicas":0,"details":{"message":"manual change","causes":[{"type":"Manual"}]},"conditions":[{"type":"Progressing","status":"False","lastUpdateTime":"2017-10-27T22:16:58Z","lastTransitionTime":"2017-10-27T22:16:58Z","reason":"ProgressDeadlineExceeded","message":"replication controller \"mongodb-6\" has failed progressing"},{"type":"Available","status":"False","lastUpdateTime":"2017-10-28T10:30:40Z","lastTransitionTime":"2017-10-28T10:30:40Z","message":"Deployment config does not have minimum availability."}]}}
+    creationTimestamp: null
+    generation: 1
+    labels:
+      app: penfold
+      openshift.io/deployment-config.name: mongodb
+      template: nodejs-mongo-persistent
+    name: mongodb-7
+    ownerReferences:
+    - apiVersion: apps.openshift.io/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: DeploymentConfig
+      name: mongodb
+      uid: ad7de878-52f2-11e7-aa56-1250f17a13c8
+  spec:
+    replicas: 0
+    selector:
+      deployment: mongodb-7
+      deploymentconfig: mongodb
+      name: mongodb
+    template:
+      metadata:
+        annotations:
+          openshift.io/deployment-config.latest-version: "7"
+          openshift.io/deployment-config.name: mongodb
+          openshift.io/deployment.name: mongodb-7
+        creationTimestamp: null
+        labels:
+          deployment: mongodb-7
+          deploymentconfig: mongodb
+          name: mongodb
+      spec:
+        containers:
+        - env:
+          - name: MONGODB_USER
+            valueFrom:
+              secretKeyRef:
+                key: database-user
+                name: penfold-bot
+          - name: MONGODB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: database-password
+                name: penfold-bot
+          - name: MONGODB_DATABASE
+            value: penfolddb
+          - name: MONGODB_ADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: database-admin-password
+                name: penfold-bot
+          image: registry.access.redhat.com/rhscl/mongodb-32-rhel7@sha256:ecff0e57fddae1440f312a7c446628aec9951d49e8f9862e30940e98ee7e667b
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: 27017
+            timeoutSeconds: 1
+          name: mongodb
+          ports:
+          - containerPort: 27017
+            protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+              - /bin/sh
+              - -i
+              - -c
+              - mongo 127.0.0.1:27017/$MONGODB_DATABASE -u $MONGODB_USER -p $MONGODB_PASSWORD
+                --eval="quit()"
+            failureThreshold: 3
+            initialDelaySeconds: 3
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources:
+            limits:
+              memory: 512Mi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /var/lib/mongodb/data
+            name: mongodb-data
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - name: mongodb-data
+          persistentVolumeClaim:
+            claimName: mongodb
+  status:
+    replicas: 0
+- apiVersion: v1
+  kind: ReplicationController
+  metadata:
+    annotations:
+      openshift.io/deployer-pod.completed-at: 2018-04-05 18:47:33 +0000 UTC
+      openshift.io/deployer-pod.created-at: 2018-04-05 18:00:40 +0000 UTC
+      openshift.io/deployer-pod.name: mongodb-9-deploy
+      openshift.io/deployment-config.latest-version: "9"
+      openshift.io/deployment-config.name: mongodb
+      openshift.io/deployment.phase: Complete
+      openshift.io/deployment.replicas: "1"
+      openshift.io/deployment.status-reason: image change
+      openshift.io/encoded-deployment-config: |
+        {"kind":"DeploymentConfig","apiVersion":"v1","metadata":{"name":"mongodb","namespace":"penfold","selfLink":"/apis/apps.openshift.io/v1/namespaces/penfold/deploymentconfigs/mongodb","uid":"ad7de878-52f2-11e7-aa56-1250f17a13c8","resourceVersion":"2402323547","generation":41,"creationTimestamp":"2017-06-17T00:19:50Z","labels":{"app":"penfold","template":"nodejs-mongo-persistent"},"annotations":{"description":"Defines how to deploy the database"}},"spec":{"strategy":{"type":"Recreate","recreateParams":{"timeoutSeconds":600},"resources":{},"activeDeadlineSeconds":21600},"triggers":[{"type":"ImageChange","imageChangeParams":{"automatic":true,"containerNames":["mongodb"],"from":{"kind":"ImageStreamTag","namespace":"openshift","name":"mongodb:3.2"},"lastTriggeredImage":"registry.access.redhat.com/rhscl/mongodb-32-rhel7@sha256:82c79f0e54d5a23f96671373510159e4fac478e2aeef4181e61f25ac38c1ae1f"}},{"type":"ConfigChange"}],"replicas":1,"test":false,"selector":{"name":"mongodb"},"template":{"metadata":{"name":"mongodb","creationTimestamp":null,"labels":{"name":"mongodb"}},"spec":{"volumes":[{"name":"mongodb-data","persistentVolumeClaim":{"claimName":"mongodb"}}],"containers":[{"name":"mongodb","image":"registry.access.redhat.com/rhscl/mongodb-32-rhel7@sha256:82c79f0e54d5a23f96671373510159e4fac478e2aeef4181e61f25ac38c1ae1f","ports":[{"containerPort":27017,"protocol":"TCP"}],"env":[{"name":"MONGODB_USER","valueFrom":{"secretKeyRef":{"name":"penfold-bot","key":"database-user"}}},{"name":"MONGODB_PASSWORD","valueFrom":{"secretKeyRef":{"name":"penfold-bot","key":"database-password"}}},{"name":"MONGODB_DATABASE","value":"penfolddb"},{"name":"MONGODB_ADMIN_PASSWORD","valueFrom":{"secretKeyRef":{"name":"penfold-bot","key":"database-admin-password"}}}],"resources":{"limits":{"memory":"512Mi"}},"volumeMounts":[{"name":"mongodb-data","mountPath":"/var/lib/mongodb/data"}],"livenessProbe":{"tcpSocket":{"port":27017},"initialDelaySeconds":30,"timeoutSeconds":1,"periodSeconds":10,"successThreshold":1,"failureThreshold":3},"readinessProbe":{"exec":{"command":["/bin/sh","-i","-c","mongo 127.0.0.1:27017/$MONGODB_DATABASE -u $MONGODB_USER -p $MONGODB_PASSWORD --eval=\"quit()\""]},"initialDelaySeconds":3,"timeoutSeconds":1,"periodSeconds":10,"successThreshold":1,"failureThreshold":3},"terminationMessagePath":"/dev/termination-log","terminationMessagePolicy":"File","imagePullPolicy":"IfNotPresent"}],"restartPolicy":"Always","terminationGracePeriodSeconds":30,"dnsPolicy":"ClusterFirst","securityContext":{},"schedulerName":"default-scheduler"}}},"status":{"latestVersion":9,"observedGeneration":40,"replicas":1,"updatedReplicas":0,"availableReplicas":1,"unavailableReplicas":0,"details":{"message":"image change","causes":[{"type":"ImageChange","imageTrigger":{"from":{"kind":"DockerImage","name":"registry.access.redhat.com/rhscl/mongodb-32-rhel7@sha256:82c79f0e54d5a23f96671373510159e4fac478e2aeef4181e61f25ac38c1ae1f"}}}]},"conditions":[{"type":"Progressing","status":"False","lastUpdateTime":"2017-11-01T11:27:07Z","lastTransitionTime":"2017-11-01T11:27:07Z","reason":"ProgressDeadlineExceeded","message":"replication controller \"mongodb-8\" has failed progressing"},{"type":"Available","status":"True","lastUpdateTime":"2018-04-04T11:26:58Z","lastTransitionTime":"2018-04-04T11:26:58Z","message":"Deployment config has minimum availability."}],"readyReplicas":1}}
+    creationTimestamp: null
+    generation: 1
+    labels:
+      app: penfold
+      openshift.io/deployment-config.name: mongodb
+      template: nodejs-mongo-persistent
+    name: mongodb-9
+    ownerReferences:
+    - apiVersion: apps.openshift.io/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: DeploymentConfig
+      name: mongodb
+      uid: ad7de878-52f2-11e7-aa56-1250f17a13c8
+  spec:
+    replicas: 0
+    selector:
+      deployment: mongodb-9
+      deploymentconfig: mongodb
+      name: mongodb
+    template:
+      metadata:
+        annotations:
+          openshift.io/deployment-config.latest-version: "9"
+          openshift.io/deployment-config.name: mongodb
+          openshift.io/deployment.name: mongodb-9
+        creationTimestamp: null
+        labels:
+          deployment: mongodb-9
+          deploymentconfig: mongodb
+          name: mongodb
+      spec:
+        containers:
+        - env:
+          - name: MONGODB_USER
+            valueFrom:
+              secretKeyRef:
+                key: database-user
+                name: penfold-bot
+          - name: MONGODB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: database-password
+                name: penfold-bot
+          - name: MONGODB_DATABASE
+            value: penfolddb
+          - name: MONGODB_ADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: database-admin-password
+                name: penfold-bot
+          image: registry.access.redhat.com/rhscl/mongodb-32-rhel7@sha256:82c79f0e54d5a23f96671373510159e4fac478e2aeef4181e61f25ac38c1ae1f
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: 27017
+            timeoutSeconds: 1
+          name: mongodb
+          ports:
+          - containerPort: 27017
+            protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+              - /bin/sh
+              - -i
+              - -c
+              - mongo 127.0.0.1:27017/$MONGODB_DATABASE -u $MONGODB_USER -p $MONGODB_PASSWORD
+                --eval="quit()"
+            failureThreshold: 3
+            initialDelaySeconds: 3
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources:
+            limits:
+              memory: 512Mi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /var/lib/mongodb/data
+            name: mongodb-data
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - name: mongodb-data
+          persistentVolumeClaim:
+            claimName: mongodb
+  status:
+    replicas: 0
+- apiVersion: v1
+  kind: ReplicationController
+  metadata:
+    annotations:
+      openshift.io/deployer-pod.completed-at: 2018-06-16 16:45:18 +0000 UTC
+      openshift.io/deployer-pod.created-at: 2018-06-16 16:44:38 +0000 UTC
+      openshift.io/deployer-pod.name: penfold-bot-41-deploy
+      openshift.io/deployment-config.latest-version: "41"
+      openshift.io/deployment-config.name: penfold-bot
+      openshift.io/deployment.phase: Complete
+      openshift.io/deployment.replicas: "1"
+      openshift.io/deployment.status-reason: image change
+      openshift.io/encoded-deployment-config: |
+        {"kind":"DeploymentConfig","apiVersion":"v1","metadata":{"name":"penfold-bot","namespace":"penfold","selfLink":"/apis/apps.openshift.io/v1/namespaces/penfold/deploymentconfigs/penfold-bot","uid":"ad743dad-52f2-11e7-aa56-1250f17a13c8","resourceVersion":"2569402876","generation":115,"creationTimestamp":"2017-06-17T00:19:50Z","labels":{"app":"penfold","template":"nodejs-mongo-persistent"},"annotations":{"description":"Defines how to deploy the application server"}},"spec":{"strategy":{"type":"Recreate","recreateParams":{"timeoutSeconds":600},"resources":{},"activeDeadlineSeconds":21600},"triggers":[{"type":"ImageChange","imageChangeParams":{"automatic":true,"containerNames":["nodejs-mongo-persistent"],"from":{"kind":"ImageStreamTag","namespace":"penfold","name":"penfold-bot:latest"},"lastTriggeredImage":"docker-registry.default.svc:5000/penfold/penfold-bot@sha256:cc0964e7aecbaceefd79cbc66762918dea2e80fa1b0baa779f2bc89ab2a5e362"}},{"type":"ConfigChange"}],"replicas":1,"test":false,"selector":{"name":"penfold-bot"},"template":{"metadata":{"name":"penfold-bot","creationTimestamp":null,"labels":{"name":"penfold-bot"}},"spec":{"containers":[{"name":"nodejs-mongo-persistent","image":"docker-registry.default.svc:5000/penfold/penfold-bot@sha256:cc0964e7aecbaceefd79cbc66762918dea2e80fa1b0baa779f2bc89ab2a5e362","ports":[{"containerPort":8080,"protocol":"TCP"}],"env":[{"name":"DATABASE_SERVICE_NAME","value":"mongodb"},{"name":"MONGODB_USER","valueFrom":{"secretKeyRef":{"name":"penfold-bot","key":"database-user"}}},{"name":"MONGODB_PASSWORD","valueFrom":{"secretKeyRef":{"name":"penfold-bot","key":"database-password"}}},{"name":"MONGODB_DATABASE","value":"penfolddb"},{"name":"MONGODB_ADMIN_PASSWORD","valueFrom":{"secretKeyRef":{"name":"penfold-bot","key":"database-admin-password"}}},{"name":"MATTERMOST_HOST","value":"chat.openshift.io"},{"name":"MATTERMOST_GROUP","value":"developers"},{"name":"MATTERMOST_USER","value":"penfold"},{"name":"MATTERMOST_PASSWORD","valueFrom":{"secretKeyRef":{"name":"penfold-bot","key":"mattermost-password"}}},{"name":"EXPRESS_PORT","value":"8080"},{"name":"HUBOT_LOG_LEVEL","value":"debug"},{"name":"MONGODB_HOST","value":"mongodb"}],"resources":{"limits":{"memory":"512Mi"}},"livenessProbe":{"tcpSocket":{"port":8080},"initialDelaySeconds":30,"timeoutSeconds":3,"periodSeconds":10,"successThreshold":1,"failureThreshold":3},"readinessProbe":{"tcpSocket":{"port":8080},"initialDelaySeconds":3,"timeoutSeconds":3,"periodSeconds":10,"successThreshold":1,"failureThreshold":3},"terminationMessagePath":"/dev/termination-log","terminationMessagePolicy":"File","imagePullPolicy":"IfNotPresent"}],"restartPolicy":"Always","terminationGracePeriodSeconds":30,"dnsPolicy":"ClusterFirst","securityContext":{},"schedulerName":"default-scheduler"}}},"status":{"latestVersion":41,"observedGeneration":114,"replicas":1,"updatedReplicas":1,"availableReplicas":1,"unavailableReplicas":0,"details":{"message":"image change","causes":[{"type":"ImageChange","imageTrigger":{"from":{"kind":"DockerImage","name":"docker-registry.default.svc:5000/penfold/penfold-bot@sha256:cc0964e7aecbaceefd79cbc66762918dea2e80fa1b0baa779f2bc89ab2a5e362"}}}]},"conditions":[{"type":"Available","status":"True","lastUpdateTime":"2018-06-16T15:31:33Z","lastTransitionTime":"2018-06-16T15:31:33Z","message":"Deployment config has minimum availability."},{"type":"Progressing","status":"True","lastUpdateTime":"2018-06-16T15:31:44Z","lastTransitionTime":"2018-06-16T15:30:56Z","reason":"NewReplicationControllerAvailable","message":"replication controller \"penfold-bot-40\" successfully rolled out"}],"readyReplicas":1}}
+    creationTimestamp: null
+    generation: 1
+    labels:
+      app: penfold
+      openshift.io/deployment-config.name: penfold-bot
+      template: nodejs-mongo-persistent
+    name: penfold-bot-41
+    ownerReferences:
+    - apiVersion: apps.openshift.io/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: DeploymentConfig
+      name: penfold-bot
+      uid: ad743dad-52f2-11e7-aa56-1250f17a13c8
+  spec:
+    replicas: 0
+    selector:
+      deployment: penfold-bot-41
+      deploymentconfig: penfold-bot
+      name: penfold-bot
+    template:
+      metadata:
+        annotations:
+          openshift.io/deployment-config.latest-version: "41"
+          openshift.io/deployment-config.name: penfold-bot
+          openshift.io/deployment.name: penfold-bot-41
+        creationTimestamp: null
+        labels:
+          deployment: penfold-bot-41
+          deploymentconfig: penfold-bot
+          name: penfold-bot
+      spec:
+        containers:
+        - env:
+          - name: DATABASE_SERVICE_NAME
+            value: mongodb
+          - name: MONGODB_USER
+            valueFrom:
+              secretKeyRef:
+                key: database-user
+                name: penfold-bot
+          - name: MONGODB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: database-password
+                name: penfold-bot
+          - name: MONGODB_DATABASE
+            value: penfolddb
+          - name: MONGODB_ADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: database-admin-password
+                name: penfold-bot
+          - name: MATTERMOST_HOST
+            value: chat.openshift.io
+          - name: MATTERMOST_GROUP
+            value: developers
+          - name: MATTERMOST_USER
+            value: penfold
+          - name: MATTERMOST_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: mattermost-password
+                name: penfold-bot
+          - name: EXPRESS_PORT
+            value: "8080"
+          - name: HUBOT_LOG_LEVEL
+            value: debug
+          - name: MONGODB_HOST
+            value: mongodb
+          image: docker-registry.default.svc:5000/penfold/penfold-bot@sha256:cc0964e7aecbaceefd79cbc66762918dea2e80fa1b0baa779f2bc89ab2a5e362
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: 8080
+            timeoutSeconds: 3
+          name: nodejs-mongo-persistent
+          ports:
+          - containerPort: 8080
+            protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 3
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: 8080
+            timeoutSeconds: 3
+          resources:
+            limits:
+              memory: 512Mi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+  status:
+    replicas: 0
+- apiVersion: v1
+  kind: ReplicationController
+  metadata:
+    annotations:
+      openshift.io/deployer-pod.completed-at: 2018-07-06 20:15:51 +0000 UTC
+      openshift.io/deployer-pod.created-at: 2018-07-06 20:14:47 +0000 UTC
+      openshift.io/deployer-pod.name: penfold-bot-42-deploy
+      openshift.io/deployment-config.latest-version: "42"
+      openshift.io/deployment-config.name: penfold-bot
+      openshift.io/deployment.phase: Complete
+      openshift.io/deployment.replicas: "1"
+      openshift.io/deployment.status-reason: manual change
+      openshift.io/encoded-deployment-config: |
+        {"kind":"DeploymentConfig","apiVersion":"v1","metadata":{"name":"penfold-bot","namespace":"penfold","selfLink":"/apis/apps.openshift.io/v1/namespaces/penfold/deploymentconfigs/penfold-bot","uid":"ad743dad-52f2-11e7-aa56-1250f17a13c8","resourceVersion":"2658550066","generation":116,"creationTimestamp":"2017-06-17T00:19:50Z","labels":{"app":"penfold","template":"nodejs-mongo-persistent"},"annotations":{"description":"Defines how to deploy the application server"}},"spec":{"strategy":{"type":"Recreate","recreateParams":{"timeoutSeconds":600},"resources":{},"activeDeadlineSeconds":21600},"triggers":[{"type":"ImageChange","imageChangeParams":{"automatic":true,"containerNames":["nodejs-mongo-persistent"],"from":{"kind":"ImageStreamTag","namespace":"penfold","name":"penfold-bot:latest"},"lastTriggeredImage":"docker-registry.default.svc:5000/penfold/penfold-bot@sha256:cc0964e7aecbaceefd79cbc66762918dea2e80fa1b0baa779f2bc89ab2a5e362"}},{"type":"ConfigChange"}],"replicas":1,"test":false,"selector":{"name":"penfold-bot"},"template":{"metadata":{"name":"penfold-bot","creationTimestamp":null,"labels":{"name":"penfold-bot"}},"spec":{"containers":[{"name":"nodejs-mongo-persistent","image":"docker-registry.default.svc:5000/penfold/penfold-bot@sha256:cc0964e7aecbaceefd79cbc66762918dea2e80fa1b0baa779f2bc89ab2a5e362","ports":[{"containerPort":8080,"protocol":"TCP"}],"env":[{"name":"DATABASE_SERVICE_NAME","value":"mongodb"},{"name":"MONGODB_USER","valueFrom":{"secretKeyRef":{"name":"penfold-bot","key":"database-user"}}},{"name":"MONGODB_PASSWORD","valueFrom":{"secretKeyRef":{"name":"penfold-bot","key":"database-password"}}},{"name":"MONGODB_DATABASE","value":"penfolddb"},{"name":"MONGODB_ADMIN_PASSWORD","valueFrom":{"secretKeyRef":{"name":"penfold-bot","key":"database-admin-password"}}},{"name":"MATTERMOST_HOST","value":"chat.openshift.io"},{"name":"MATTERMOST_GROUP","value":"developers"},{"name":"MATTERMOST_USER","value":"penfold"},{"name":"MATTERMOST_PASSWORD","valueFrom":{"secretKeyRef":{"name":"penfold-bot","key":"mattermost-password"}}},{"name":"EXPRESS_PORT","value":"8080"},{"name":"HUBOT_LOG_LEVEL","value":"debug"},{"name":"MONGODB_HOST","value":"mongodb"}],"resources":{"limits":{"memory":"512Mi"}},"livenessProbe":{"tcpSocket":{"port":8080},"initialDelaySeconds":30,"timeoutSeconds":3,"periodSeconds":10,"successThreshold":1,"failureThreshold":3},"readinessProbe":{"tcpSocket":{"port":8080},"initialDelaySeconds":3,"timeoutSeconds":3,"periodSeconds":10,"successThreshold":1,"failureThreshold":3},"terminationMessagePath":"/dev/termination-log","terminationMessagePolicy":"File","imagePullPolicy":"IfNotPresent"}],"restartPolicy":"Always","terminationGracePeriodSeconds":30,"dnsPolicy":"ClusterFirst","securityContext":{},"schedulerName":"default-scheduler"}}},"status":{"latestVersion":42,"observedGeneration":115,"replicas":1,"updatedReplicas":1,"availableReplicas":0,"unavailableReplicas":1,"details":{"message":"manual change","causes":[{"type":"Manual"}]},"conditions":[{"type":"Progressing","status":"True","lastUpdateTime":"2018-06-16T16:45:19Z","lastTransitionTime":"2018-06-16T16:44:52Z","reason":"NewReplicationControllerAvailable","message":"replication controller \"penfold-bot-41\" successfully rolled out"},{"type":"Available","status":"False","lastUpdateTime":"2018-07-05T13:05:23Z","lastTransitionTime":"2018-07-05T13:05:23Z","message":"Deployment config does not have minimum availability."}]}}
+    creationTimestamp: null
+    generation: 1
+    labels:
+      app: penfold
+      openshift.io/deployment-config.name: penfold-bot
+      template: nodejs-mongo-persistent
+    name: penfold-bot-42
+    ownerReferences:
+    - apiVersion: apps.openshift.io/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: DeploymentConfig
+      name: penfold-bot
+      uid: ad743dad-52f2-11e7-aa56-1250f17a13c8
+  spec:
+    replicas: 1
+    selector:
+      deployment: penfold-bot-42
+      deploymentconfig: penfold-bot
+      name: penfold-bot
+    template:
+      metadata:
+        annotations:
+          openshift.io/deployment-config.latest-version: "42"
+          openshift.io/deployment-config.name: penfold-bot
+          openshift.io/deployment.name: penfold-bot-42
+        creationTimestamp: null
+        labels:
+          deployment: penfold-bot-42
+          deploymentconfig: penfold-bot
+          name: penfold-bot
+      spec:
+        containers:
+        - env:
+          - name: DATABASE_SERVICE_NAME
+            value: mongodb
+          - name: MONGODB_USER
+            valueFrom:
+              secretKeyRef:
+                key: database-user
+                name: penfold-bot
+          - name: MONGODB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: database-password
+                name: penfold-bot
+          - name: MONGODB_DATABASE
+            value: penfolddb
+          - name: MONGODB_ADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: database-admin-password
+                name: penfold-bot
+          - name: MATTERMOST_HOST
+            value: chat.openshift.io
+          - name: MATTERMOST_GROUP
+            value: developers
+          - name: MATTERMOST_USER
+            value: penfold
+          - name: MATTERMOST_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: mattermost-password
+                name: penfold-bot
+          - name: EXPRESS_PORT
+            value: "8080"
+          - name: HUBOT_LOG_LEVEL
+            value: debug
+          - name: MONGODB_HOST
+            value: mongodb
+          image: docker-registry.default.svc:5000/penfold/penfold-bot@sha256:cc0964e7aecbaceefd79cbc66762918dea2e80fa1b0baa779f2bc89ab2a5e362
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: 8080
+            timeoutSeconds: 3
+          name: nodejs-mongo-persistent
+          ports:
+          - containerPort: 8080
+            protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 3
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: 8080
+            timeoutSeconds: 3
+          resources:
+            limits:
+              memory: 512Mi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+  status:
+    replicas: 0
+- apiVersion: v1
+  kind: ReplicationController
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/desired-replicas: "0"
+      openshift.io/deployer-pod.created-at: 2018-08-29 01:29:01 +0000 UTC
+      openshift.io/deployer-pod.name: penfold-bot-43-deploy
+      openshift.io/deployment-config.latest-version: "43"
+      openshift.io/deployment-config.name: penfold-bot
+      openshift.io/deployment.cancelled: "true"
+      openshift.io/deployment.phase: Failed
+      openshift.io/deployment.replicas: "0"
+      openshift.io/deployment.status-reason: The deployment was cancelled by the user
+      openshift.io/encoded-deployment-config: |
+        {"kind":"DeploymentConfig","apiVersion":"v1","metadata":{"name":"penfold-bot","namespace":"penfold","selfLink":"/apis/apps.openshift.io/v1/namespaces/penfold/deploymentconfigs/penfold-bot","uid":"ad743dad-52f2-11e7-aa56-1250f17a13c8","resourceVersion":"3047304921","generation":126,"creationTimestamp":"2017-06-17T00:19:50Z","labels":{"app":"penfold","template":"nodejs-mongo-persistent"},"annotations":{"description":"Defines how to deploy the application server"}},"spec":{"strategy":{"type":"Recreate","recreateParams":{"timeoutSeconds":600},"resources":{},"activeDeadlineSeconds":21600},"triggers":[{"type":"ImageChange","imageChangeParams":{"automatic":true,"containerNames":["nodejs-mongo-persistent"],"from":{"kind":"ImageStreamTag","namespace":"penfold","name":"penfold-bot:latest"},"lastTriggeredImage":"docker-registry.default.svc:5000/penfold/penfold-bot@sha256:cc0964e7aecbaceefd79cbc66762918dea2e80fa1b0baa779f2bc89ab2a5e362"}},{"type":"ConfigChange"}],"replicas":0,"test":false,"selector":{"name":"penfold-bot"},"template":{"metadata":{"name":"penfold-bot","creationTimestamp":null,"labels":{"name":"penfold-bot"}},"spec":{"containers":[{"name":"nodejs-mongo-persistent","image":"docker-registry.default.svc:5000/penfold/penfold-bot@sha256:cc0964e7aecbaceefd79cbc66762918dea2e80fa1b0baa779f2bc89ab2a5e362","ports":[{"containerPort":8080,"protocol":"TCP"}],"env":[{"name":"DATABASE_SERVICE_NAME","value":"mongodb"},{"name":"MONGODB_USER","valueFrom":{"secretKeyRef":{"name":"penfold-bot","key":"database-user"}}},{"name":"MONGODB_PASSWORD","valueFrom":{"secretKeyRef":{"name":"penfold-bot","key":"database-password"}}},{"name":"MONGODB_DATABASE","value":"penfolddb"},{"name":"MONGODB_ADMIN_PASSWORD","valueFrom":{"secretKeyRef":{"name":"penfold-bot","key":"database-admin-password"}}},{"name":"MATTERMOST_HOST","value":"chat.openshift.io"},{"name":"MATTERMOST_GROUP","value":"developers"},{"name":"MATTERMOST_USER","value":"penfold"},{"name":"MATTERMOST_PASSWORD","valueFrom":{"secretKeyRef":{"name":"penfold-bot","key":"mattermost-password"}}},{"name":"EXPRESS_PORT","value":"8080"},{"name":"HUBOT_LOG_LEVEL","value":"debug"},{"name":"MONGODB_HOST","value":"mongodb"}],"resources":{"limits":{"memory":"512Mi"}},"livenessProbe":{"tcpSocket":{"port":8080},"initialDelaySeconds":30,"timeoutSeconds":3,"periodSeconds":10,"successThreshold":1,"failureThreshold":3},"readinessProbe":{"tcpSocket":{"port":8080},"initialDelaySeconds":3,"timeoutSeconds":3,"periodSeconds":10,"successThreshold":1,"failureThreshold":3},"terminationMessagePath":"/dev/termination-log","terminationMessagePolicy":"File","imagePullPolicy":"IfNotPresent"}],"restartPolicy":"Always","terminationGracePeriodSeconds":30,"dnsPolicy":"ClusterFirst","securityContext":{},"schedulerName":"default-scheduler"}}},"status":{"latestVersion":43,"observedGeneration":125,"replicas":0,"updatedReplicas":0,"availableReplicas":0,"unavailableReplicas":0,"details":{"message":"manual change","causes":[{"type":"Manual"}]},"conditions":[{"type":"Progressing","status":"True","lastUpdateTime":"2018-07-06T20:15:52Z","lastTransitionTime":"2018-07-06T20:15:00Z","reason":"NewReplicationControllerAvailable","message":"replication controller \"penfold-bot-42\" successfully rolled out"},{"type":"Available","status":"False","lastUpdateTime":"2018-08-29T01:25:28Z","lastTransitionTime":"2018-08-29T01:25:28Z","message":"Deployment config does not have minimum availability."}]}}
+    creationTimestamp: null
+    generation: 1
+    labels:
+      app: penfold
+      openshift.io/deployment-config.name: penfold-bot
+      template: nodejs-mongo-persistent
+    name: penfold-bot-43
+    ownerReferences:
+    - apiVersion: apps.openshift.io/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: DeploymentConfig
+      name: penfold-bot
+      uid: ad743dad-52f2-11e7-aa56-1250f17a13c8
+  spec:
+    replicas: 0
+    selector:
+      deployment: penfold-bot-43
+      deploymentconfig: penfold-bot
+      name: penfold-bot
+    template:
+      metadata:
+        annotations:
+          openshift.io/deployment-config.latest-version: "43"
+          openshift.io/deployment-config.name: penfold-bot
+          openshift.io/deployment.name: penfold-bot-43
+        creationTimestamp: null
+        labels:
+          deployment: penfold-bot-43
+          deploymentconfig: penfold-bot
+          name: penfold-bot
+      spec:
+        containers:
+        - env:
+          - name: DATABASE_SERVICE_NAME
+            value: mongodb
+          - name: MONGODB_USER
+            valueFrom:
+              secretKeyRef:
+                key: database-user
+                name: penfold-bot
+          - name: MONGODB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: database-password
+                name: penfold-bot
+          - name: MONGODB_DATABASE
+            value: penfolddb
+          - name: MONGODB_ADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: database-admin-password
+                name: penfold-bot
+          - name: MATTERMOST_HOST
+            value: chat.openshift.io
+          - name: MATTERMOST_GROUP
+            value: developers
+          - name: MATTERMOST_USER
+            value: penfold
+          - name: MATTERMOST_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: mattermost-password
+                name: penfold-bot
+          - name: EXPRESS_PORT
+            value: "8080"
+          - name: HUBOT_LOG_LEVEL
+            value: debug
+          - name: MONGODB_HOST
+            value: mongodb
+          image: docker-registry.default.svc:5000/penfold/penfold-bot@sha256:cc0964e7aecbaceefd79cbc66762918dea2e80fa1b0baa779f2bc89ab2a5e362
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: 8080
+            timeoutSeconds: 3
+          name: nodejs-mongo-persistent
+          ports:
+          - containerPort: 8080
+            protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 3
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: 8080
+            timeoutSeconds: 3
+          resources:
+            limits:
+              memory: 512Mi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+  status:
+    replicas: 0
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      description: Exposes the database server
+    creationTimestamp: null
+    labels:
+      app: penfold
+      template: nodejs-mongo-persistent
+    name: mongodb
+  spec:
+    ports:
+    - name: mongodb
+      port: 27017
+      protocol: TCP
+      targetPort: 27017
+    selector:
+      name: mongodb
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      app.kubernetes.io/component-source-type: local
+      app.kubernetes.io/url: file:///Users/gercan/jnk
+    creationTimestamp: null
+    labels:
+      app: app
+      app.kubernetes.io/component-name: nodejs
+      app.kubernetes.io/component-type: nodejs
+      app.kubernetes.io/component-version: latest
+      app.kubernetes.io/name: app
+    name: nodejs-app
+  spec:
+    ports:
+    - name: 8080-tcp
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    selector:
+      deploymentconfig: nodejs-app
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      description: Exposes and load balances the application pods
+      service.alpha.openshift.io/dependencies: '[{"name": "mongodb", "kind": "Service"}]'
+    creationTimestamp: null
+    labels:
+      app: penfold
+      template: nodejs-mongo-persistent
+    name: penfold-bot
+  spec:
+    ports:
+    - name: web
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    selector:
+      name: penfold-bot
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+kind: List
+metadata: {}
