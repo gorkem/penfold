@@ -35,7 +35,7 @@ items :
     HUBOT_LOG_LEVEL: debug
     MATTERMOST_GROUP: developers
     MATTERMOST_HOST: chat.openshift.io
-    MATTERMOST_USER: penfold
+    MATTERMOST_USER: penfold_TEST
     MONGODB_DATABASE: penfolddb
     MONGODB_HOST: mongodb
   metadata:
