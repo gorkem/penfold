@@ -135,9 +135,8 @@ items :
             claimName: mongodb
     test: false
     selector:
-      app.kubernetes.io/name: mongodb
-      app.kubernetes.io/part-of: penfold-bot
-    triggers:
+      matchExpressions:
+        - {key: app.kubernetes.io/part-of, operator: In, values: [penfold-bot]}
     - imageChangeParams:
         automatic: true
         containerNames:
