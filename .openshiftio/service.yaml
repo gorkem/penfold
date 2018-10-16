@@ -66,7 +66,8 @@ items :
       metadata:
         creationTimestamp: null
         labels:
-          app: mongodb
+          app.kubernetes.io/name: mongodb
+          app.kubernetes.io/part-of: penfold-bot
         name: mongodb
       spec:
         containers:
@@ -134,8 +135,8 @@ items :
             claimName: mongodb
     test: false
     selector:
-      matchExpressions:
-        - {key: app.kubernetes.io/part-of, operator: In, values: [penfold-bot]}
+      app.kubernetes.io/name: mongodb
+      app.kubernetes.io/part-of: penfold-bot
     triggers:
     - imageChangeParams:
         automatic: true
