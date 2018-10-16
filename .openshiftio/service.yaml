@@ -53,7 +53,7 @@ items :
     labels:
       app.kubernetes.io/name: mongodb
       app.kubernetes.io/part-of: penfold-bot
-    name: penfold-bot${SUFFIX_NAME}
+    name: penfold-bot
   spec:
     replicas: 1
     strategy:

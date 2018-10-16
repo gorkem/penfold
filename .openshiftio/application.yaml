@@ -64,7 +64,7 @@ objects:
   - apiVersion: v1
     kind: DeploymentConfig
     metadata:
-      name: penfold-bot${SUFFIX_NAME}
+      name: penfold-bot
       labels:
         app.kubernetes.io/name: penfold-bot
         app.kubernetes.io/part-of: penfold-bot
@@ -149,7 +149,7 @@ objects:
       replicas: 1
       revisionHistoryLimit: 2
       selector:
-         name: penfold-bot${SUFFIX_NAME}
+         name: penfold-bot
       triggers:
         - type: ConfigChange
         - type: ImageChange
