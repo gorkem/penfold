@@ -38,7 +38,6 @@ objects:
       labels:
         app.kubernetes.io/name: penfold-bot
         app.kubernetes.io/part-of: penfold-bot
-        app.kubernetes.io/version: ${RELEASE_VERSION}
     spec:
       postCommit: {}
       resources: {}
@@ -149,7 +148,8 @@ objects:
       replicas: 1
       revisionHistoryLimit: 2
       selector:
-         name: penfold-bot
+        app.kubernetes.io/name: penfold-bot
+        app.kubernetes.io/part-of: penfold-bot
       triggers:
         - type: ConfigChange
         - type: ImageChange

@@ -6,7 +6,7 @@ items :
   metadata:
     creationTimestamp: null
     labels:
-      app.kubernetes.io/name: penfold-bot
+      app.kubernetes.io/name: mongodb
       app.kubernetes.io/part-of: penfold-bot
     name: mongodb
   spec:
@@ -53,7 +53,7 @@ items :
     labels:
       app.kubernetes.io/name: mongodb
       app.kubernetes.io/part-of: penfold-bot
-    name: penfold-bot
+    name: mongodb
   spec:
     replicas: 1
     strategy:
@@ -134,6 +134,9 @@ items :
           persistentVolumeClaim:
             claimName: mongodb
     test: false
+    selector:
+      app.kubernetes.io/name: mongodb
+      app.kubernetes.io/part-of: penfold-bot
     triggers:
     - imageChangeParams:
         automatic: true
