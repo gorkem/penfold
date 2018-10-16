@@ -6,7 +6,8 @@ items :
   metadata:
     creationTimestamp: null
     labels:
-      app: penfold-bot
+      app.kubernetes.io/name: penfold-bot
+      app.kubernetes.io/part-of: penfold-bot
     name: mongodb
   spec:
     accessModes:
@@ -25,7 +26,8 @@ items :
   metadata:
     creationTimestamp: null
     labels:
-      app: penfold-bot
+      app.kubernetes.io/name: penfold-bot
+      app.kubernetes.io/part-of: penfold-bot
     name: penfold-bot
 - apiVersion: v1
   kind: ConfigMap
@@ -41,14 +43,16 @@ items :
   metadata:
     creationTimestamp: null
     labels:
-      app: penfold-bot
+      app.kubernetes.io/name: penfold-bot
+      app.kubernetes.io/part-of: penfold-bot
     name: penfold-config
 - apiVersion: apps.openshift.io/v1
   kind: DeploymentConfig
   metadata:
     creationTimestamp: null
     labels:
-      app: mongodb
+      app.kubernetes.io/name: mongodb
+      app.kubernetes.io/part-of: penfold-bot
     name: mongodb
   spec:
     replicas: 1
@@ -62,7 +66,8 @@ items :
       metadata:
         creationTimestamp: null
         labels:
-          app: penfold-bot
+          app.kubernetes.io/name: mongodb
+          app.kubernetes.io/part-of: penfold-bot
         name: mongodb
       spec:
         containers:
