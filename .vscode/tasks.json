@@ -8,6 +8,7 @@
       "label": "compile",
       "type": "shell",
       // we run the custom script "compile" as defined in package.json
+      "command": "npm",
       "args": [
         "run",
         "compile",
