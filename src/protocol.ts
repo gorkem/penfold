@@ -59,6 +59,13 @@ export class User {
     return this.kernel.real_name;
   }
 
+  public getDisplayName(): string {
+    if (this.realName && this.realName.trim().length > 0) {
+      return this.realName;
+    } else {
+      return this.name;
+    }
+  }
 }
 
 

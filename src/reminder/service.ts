@@ -1,4 +1,4 @@
-import { IMessageConsumer, Response, Message} from '../protocol';
+import { IMessageConsumer, Response, Message, Robot} from '../protocol';
 import * as business from 'moment-business';
 import * as Agenda from 'agenda';
 import * as moment from 'moment';
@@ -8,7 +8,7 @@ import * as Report from '../standup/report';
 
 
 export class ReminderService implements IMessageConsumer {
-  public static robot;
+  public static robot:Robot;
 
   private dbconn;
   constructor(dbConnectionString:string){

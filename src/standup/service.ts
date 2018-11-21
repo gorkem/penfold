@@ -37,41 +37,36 @@ export class StandupService implements IMessageConsumer {
         logger.debug('channel found for '+response.message.room +' is '+channel);
         if (channel) {
          return Promise.resolve(channel);
+        } else {
+          this.sendResponse('Nothing noteworthy was reported lately.', response);
+          return Promise.reject('No channel');
         }
-        let queryUser = StandupService.robot.getUserForId(response.message.userId);
-        logger.debug('Sending report to user ',queryUser);
-        response.send('Nothing noteworthy was reported lately.');
-        return Promise.reject('No channel');
       }
     ).then(channel => {
-      let mu = moment().utc();
-      let hour = mu.startOf('hour');
-      let searchStart = hour.subtract(24, 'hour');
+      let searchStart = this.getSearchStart();
       Report.find({ 'channel': channel.id, 'created_at': { $gt: searchStart.toDate() } }).sort({ created_at: -1 }).then(
         reports => {
-          let reportMesage: string = 'Nothing noteworthy was reported lately.';
-          if (reports && reports[0]) {
-            reportMesage = '';
-            logger.debug(reports.length + ' reports found for channel ' + channel.id);
+          let reportMessage: string = 'Nothing noteworthy was reported lately.';
+          if (!reports || reports.length === 0) {
+            logger.debug(`No reports found for channel ${channel.id}`);
+            return Promise.reject('No reports');
+          } else {
+            reportMessage = '';
+            logger.debug(`${reports.length} reports found for channel ${channel.id}`);
             let reportedUser = [];
             reports.forEach(report => {
-              if (reportedUser.indexOf(report.user)<0) {
+              if (reportedUser.indexOf(report.user) < 0) {
                 reportedUser.push(report.user);
                 let user = StandupService.robot.getUserForId(report.user);
-                let userName = user.name;
-                if (user.realName && user.realName.trim().length > 0) {
-                  userName = user.realName;
-                }
+                let userName = user.getDisplayName();
                 let body = report.text;
                 let time = moment().utc().to(moment(report.created_at));
-                reportMesage += `:memo: _${userName} reported ${time}_\n${body}\n***\n`;
+                reportMessage += `:memo: _${userName} reported ${time}_\n${body}\n***\n`;
               }
             });
           }
-          let queryUser = StandupService.robot.getUserForId(response.message.userId);
-          logger.debug('Sending report to user ', queryUser);
-          response.send(reportMesage);
-          return Promise.reject('No reports');
+          this.sendResponse(reportMessage, response);
+          return Promise.resolve(reports);
         }
       );
     }).
@@ -80,28 +75,37 @@ export class StandupService implements IMessageConsumer {
     });
   }
 
+  private getSearchStart(): moment.Moment {
+    let mu = moment().utc();
+    let hour = mu.startOf('hour');
+    return hour.subtract(24, 'hour');
+  }
+
+  private sendResponse(message: string, response: Response) {
+    let queryUser = StandupService.robot.getUserForId(response.message.userId);
+    logger.debug(`Sending report ${message} to user ${queryUser}`);
+    response.send(message);
+  }
+
   private updateChannel(response: Response): Promise<IChannel> {
     return new Promise((resolve, reject) => {
       Channel.findOne({ id: response.message.room }, (error, channel) => {
         if (error) {
-          reject(error);
-          return;
+          return reject(error);
         }
         if (!channel) {
-          logger.debug('channel ' + response.message.room + ' does not exist yet. Saving it.');
+          logger.debug(`channel ${response.message.room} does not exist yet. Saving it.`);
           channel = new Channel();
           channel.id = response.message.room;
           channel.team.push(response.message.userId);
-          return channel.save();
-        } else if (!channel.team.indexOf(response.message.userId)) { 
-          logger.debug('adding user ' + response.message.userId + ' to channel ' + response.message.room);
+          channel.save();
+        } else if (channel.team.indexOf(response.message.userId) === -1) { 
+          logger.debug(`adding user ${response.message.userId} to channel ${response.message.room}`);
           channel.team.push(response.message.userId);
-          return channel.save();
+          channel.save();
         }
-        resolve(channel);
-      }
-      );
-
+        return resolve(channel);
+      });
     });
 
   }
