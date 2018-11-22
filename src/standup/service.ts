@@ -34,36 +34,25 @@ export class StandupService implements IMessageConsumer {
     logger.debug('Print report for ', response.message.room);
     Channel.findOne({ id: response.message.room }).then(
       channel => {
-        logger.debug('channel found for '+response.message.room +' is '+channel);
-        if (channel) {
-         return Promise.resolve(channel);
-        } else {
+        if (!channel) {
           this.sendResponse('Nothing noteworthy was reported lately.', response);
           return Promise.reject('No channel');
+        } else {
+          logger.debug(`channel found for ${response.message.room} is ${channel}`);
+          return Promise.resolve(channel);
         }
       }
     ).then(channel => {
       let searchStart = this.getSearchStart();
       Report.find({ 'channel': channel.id, 'created_at': { $gt: searchStart.toDate() } }).sort({ created_at: -1 }).then(
         reports => {
-          let reportMessage: string = 'Nothing noteworthy was reported lately.';
           if (!reports || reports.length === 0) {
             logger.debug(`No reports found for channel ${channel.id}`);
+            this.sendResponse('Nothing noteworthy was reported lately.', response);
             return Promise.reject('No reports');
           } else {
-            reportMessage = '';
             logger.debug(`${reports.length} reports found for channel ${channel.id}`);
-            let reportedUser = [];
-            reports.forEach(report => {
-              if (reportedUser.indexOf(report.user) < 0) {
-                reportedUser.push(report.user);
-                let user = StandupService.robot.getUserForId(report.user);
-                let userName = user.getDisplayName();
-                let body = report.text;
-                let time = moment().utc().to(moment(report.created_at));
-                reportMessage += `:memo: _${userName} reported ${time}_\n${body}\n***\n`;
-              }
-            });
+            let reportMessage = this.getReportMessage(reports);
             this.sendResponse(reportMessage, response);
             return Promise.resolve(reports);
           }
@@ -73,6 +62,22 @@ export class StandupService implements IMessageConsumer {
     catch(error => {
       logger.warn(error);
     });
+  }
+
+  private getReportMessage(reports: IReport[]) {
+    let reportMessage = '';
+    let reportedUser = [];
+    reports.forEach(report => {
+      if (reportedUser.indexOf(report.user) < 0) {
+        reportedUser.push(report.user);
+        let user = StandupService.robot.getUserForId(report.user);
+        let userName = user.getDisplayName();
+        let body = report.text;
+        let time = moment().utc().to(moment(report.created_at));
+        reportMessage += `:memo: _${userName} reported ${time}_\n${body}\n***\n`;
+      }
+    });
+    return reportMessage;
   }
 
   private getSearchStart(): moment.Moment {
