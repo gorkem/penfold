@@ -23,35 +23,21 @@ import {IssueInfoService} from './src/github/issueInfo';
 import {Response,Robot} from './src/protocol';
 import * as mongoose from 'mongoose';
 import * as winston from 'winston';
+import * as Q from 'q';
 
-winston.configure({
+declare module 'mongoose' { type Promise<T> = Q.Promise<T>; }
+
+  winston.configure({
   transports: [
     new (winston.transports.Console)({ level: 'debug' }),
   ]
 });
 
-const mongouser = process.env.MONGODB_USER;
-const mongopass = process.env.MONGODB_PASSWORD;
-const mongodb =  process.env.MONGODB_DATABASE;
-const mongohost = process.env.MONGODB_HOST || 'mongodb';
-
-let mongoauth='';
-if(mongouser){
-  mongoauth =  `${mongouser}:${mongopass}@`;
-}
-
-
-const mongoConnectionString = `mongodb://${mongoauth}${mongohost}/${mongodb}`;
-mongoose.connect(mongoConnectionString, { server: { reconnectTries: Number.MAX_VALUE, keepAlive: 120  } });
-let db = mongoose.connection;
-db.on('error', console.error.bind(console, 'connection error:'));
-db.once('open', function () {
-  winston.info('connected to db');
-});
+const mongoConnectionString = getMongoConnectionString();
+initMongo(mongoConnectionString);
 const standupService = new StandupService();
 const reminderService = new ReminderService(mongoConnectionString);
 const issueInfoService = new IssueInfoService();
-
 
 function Penfold(robot: any) {
   let aRobot = new Robot(robot);
@@ -75,3 +61,30 @@ function Penfold(robot: any) {
 
 }
 export = Penfold;
+
+function getMongoConnectionString(): string {
+  const mongouser = process.env.MONGODB_USER;
+  const mongopass = process.env.MONGODB_PASSWORD;
+  const mongodb =  process.env.MONGODB_DATABASE;
+  const mongohost = process.env.MONGODB_HOST || 'mongodb';
+
+  let mongoauth='';
+  if(mongouser){
+    mongoauth =  `${mongouser}:${mongopass}@`;
+  }
+
+  return `mongodb://${mongoauth}${mongohost}/${mongodb}`;
+}
+
+function initMongo(mongoConnectionString: string) {
+  (<any>mongoose).Promise = Q.Promise;
+  mongoose.connect(mongoConnectionString, { 
+    reconnectTries: Number.MAX_VALUE, 
+    keepAlive: 120, 
+    useMongoClient: true });
+  let db = mongoose.connection;
+  db.on('error', console.error.bind(console, 'connection error:'));
+  db.once('open', function () {
+    winston.info('connected to db');
+  });
+}

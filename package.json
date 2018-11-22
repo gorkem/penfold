@@ -16,6 +16,7 @@
     "moment-business": "3.0.1",
     "moment-parser": "^0.3.0",
     "mongoose": "^4.13.9",
+    "q": "^1.5.1",
     "winston": "^2.4.0"
   },
   "engines": {
