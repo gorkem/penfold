@@ -64,9 +64,9 @@ export class StandupService implements IMessageConsumer {
                 reportMessage += `:memo: _${userName} reported ${time}_\n${body}\n***\n`;
               }
             });
+            this.sendResponse(reportMessage, response);
+            return Promise.resolve(reports);
           }
-          this.sendResponse(reportMessage, response);
-          return Promise.resolve(reports);
         }
       );
     }).
