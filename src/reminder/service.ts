@@ -5,12 +5,14 @@ import * as moment from 'moment';
 import * as logger from 'winston';
 import * as Channel from '../standup/channel';
 import * as Report from '../standup/report';
+import { IChannel } from '../standup/model';
 
 
 export class ReminderService implements IMessageConsumer {
   public static robot:Robot;
 
   private dbconn;
+
   constructor(dbConnectionString:string){
     this.dbconn = dbConnectionString;
     this.initAgenda();
@@ -35,10 +37,7 @@ export class ReminderService implements IMessageConsumer {
       logger.info('agendas scheduled');
     });
   }
-
-
 }
-
 
 // ##### Agenda processors #########
 function checkStandups(job, done) {
@@ -51,21 +50,29 @@ function checkStandups(job, done) {
       for (let index = 0; index < channels.length; index++) {
         let channel = channels[index];
         channel.team.forEach(userId => {
-          Report.findOne({ 'channel': channel.id, 'user': userId, 'created_at': { $gt: querydate.toDate() } })
-            .then(result => {
-              if (!result) {
-                let user = ReminderService.robot.getUserForId(userId);
-                if (user) {
-                  ReminderService.robot.messageRoom(channel.id, `@${user.name} please remember to report your daily stand up`);
-                } else {
-                  logger.info('No user name found for ' + userId);
-                }
-              }
-            });
-        });
+          remindUser(channel, userId, querydate);
+          }
+        );
       }
+      Promise.resolve(channels);
     });
   }
   done();
+
+  function remindUser(channel: IChannel, userId: any, querydate: moment.Moment) {
+    Report.findOne({ 'channel': channel.id, 'user': userId, 'created_at': { $gt: querydate.toDate() } })
+      .then(result => {
+        if (!result) {
+          let user = ReminderService.robot.getUserForId(userId);
+          if (user) {
+            ReminderService.robot.messageRoom(channel.id, `@${user.name} please remember to report your daily stand up`);
+          }
+          else {
+            logger.info('No user name found for ' + userId);
+          }
+        }
+        Promise.resolve(result);
+      });
+  }
 }
 
