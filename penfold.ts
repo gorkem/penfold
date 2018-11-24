@@ -78,10 +78,10 @@ function getMongoConnectionString(): string {
 
 function initMongo(mongoConnectionString: string) {
   (<any>mongoose).Promise = Q.Promise;
-  mongoose.connect(mongoConnectionString, { 
-    reconnectTries: Number.MAX_VALUE, 
-    keepAlive: 120, 
-    useMongoClient: true });
+  mongoose.connect(mongoConnectionString, {
+    reconnectTries: Number.MAX_VALUE,
+    keepAlive: 120,
+    useNewUrlParser: true });
   let db = mongoose.connection;
   db.on('error', console.error.bind(console, 'connection error:'));
   db.once('open', function () {
