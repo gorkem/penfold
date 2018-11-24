@@ -135,7 +135,10 @@ objects:
               - name: HUBOT_LOG_LEVEL
                 value: debug
               - name: MONGODB_HOST
-                value: mongodb
+                valueFrom:
+                  configMapKeyRef:
+                    key: MONGODB_HOST
+                    name: penfold-config
               image: 172.30.208.107:5000/penfold/penfold-bot:latest
               imagePullPolicy: IfNotPresent
               name: penfold-bot
