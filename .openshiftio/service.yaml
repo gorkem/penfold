@@ -71,6 +71,7 @@ items :
         labels:
           app.kubernetes.io/name: mongodb
           app.kubernetes.io/part-of: penfold-bot
+          app: penfold-bot
         name: mongodb
       spec:
         containers:
@@ -140,6 +141,7 @@ items :
     selector:
       app.kubernetes.io/name: mongodb
       app.kubernetes.io/part-of: penfold-bot
+      app: penfold-bot
     triggers:
     - imageChangeParams:
         automatic: true
