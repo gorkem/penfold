@@ -30,6 +30,7 @@ objects:
         app.kubernetes.io/name: penfold-bot
         app.kubernetes.io/part-of: penfold-bot
         app.kubernetes.io/version: ${RELEASE_VERSION}
+        app: penfold-bot
     spec: {}
   - apiVersion: v1
     kind: BuildConfig
@@ -68,6 +69,7 @@ objects:
         app.kubernetes.io/name: penfold-bot
         app.kubernetes.io/part-of: penfold-bot
         app.kubernetes.io/version: ${RELEASE_VERSION}
+        app: penfold-bot
     spec:
       template:
         spec:

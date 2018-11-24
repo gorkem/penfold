@@ -18,6 +18,7 @@
     "moment-parser": "^0.3.0",
     "mongoose": "^4.13.9",
     "q": "^1.5.1",
+    "ts-node": "^7.0.1",
     "winston": "^2.4.0"
   },
   "engines": {
@@ -40,7 +41,7 @@
   "scripts": {
     "compile": "tsc -watch -p ./",
     "build": "tsc -p ./",
-    "test": "./node_modules/mocha/bin/mocha scripts/tests/**/*Test.js --reporter spec  --compilers coffee:coffee-script",
+    "test": "./node_modules/mocha/bin/mocha tests/**/*.ts --reporter spec --require ts-node/register",
     "tslint": "gulp tslint",
     "start": "./bin/hubot --adapter matteruser --name penfold",
     "nodeshift": "nodeshift"

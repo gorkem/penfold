@@ -28,6 +28,7 @@ items :
     labels:
       app.kubernetes.io/name: penfold-bot
       app.kubernetes.io/part-of: penfold-bot
+      app: penfold-bot
     name: penfold-bot
 - apiVersion: v1
   kind: ConfigMap
@@ -45,6 +46,7 @@ items :
     labels:
       app.kubernetes.io/name: penfold-bot
       app.kubernetes.io/part-of: penfold-bot
+      app: penfold-bot
     name: penfold-config
 - apiVersion: apps.openshift.io/v1
   kind: DeploymentConfig
@@ -53,6 +55,7 @@ items :
     labels:
       app.kubernetes.io/name: mongodb
       app.kubernetes.io/part-of: penfold-bot
+      app: penfold-bot
     name: mongodb
   spec:
     replicas: 1
@@ -137,6 +140,7 @@ items :
     selector:
       app.kubernetes.io/name: mongodb
       app.kubernetes.io/part-of: penfold-bot
+      app: penfold-bot
     triggers:
     - imageChangeParams:
         automatic: true
