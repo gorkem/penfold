@@ -111,11 +111,20 @@ objects:
                     key: database-admin-password
                     name: penfold-bot
               - name: MATTERMOST_HOST
-                value: chat.openshift.io
+                valueFrom:
+                  configMapKeyRef:
+                    key: MATTERMOST_HOST
+                    name: penfold-config
               - name: MATTERMOST_GROUP
-                value: developers
+                valueFrom:
+                  configMapKeyRef:
+                    key: MATTERMOST_GROUP
+                    name: penfold-config
               - name: MATTERMOST_USER
-                value: penfold
+                valueFrom:
+                  configMapKeyRef:
+                    key: MATTERMOST_USER
+                    name: penfold-config
               - name: MATTERMOST_PASSWORD
                 valueFrom:
                   secretKeyRef:
