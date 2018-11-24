@@ -157,6 +157,10 @@ items :
   kind: Service
   metadata:
     name: mongodb
+    labels:
+      app.kubernetes.io/name: mongodb
+      app.kubernetes.io/part-of: penfold-bot
+      app: penfold-bot
   spec:
     ports:
       - name: "mongodb"
@@ -164,4 +168,6 @@ items :
         port: 27017
         targetPort: 27017
     selector:
-      name: mongodb
+      app.kubernetes.io/name: mongodb
+      app.kubernetes.io/part-of: penfold-bot
+      app: penfold-bot
