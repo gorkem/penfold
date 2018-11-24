@@ -73,7 +73,7 @@ function getMongoConnectionString(): string {
     mongoauth =  `${mongouser}:${mongopass}@`;
   }
 
-  return `mongodb://${mongoauth}${mongohost}/${mongodb}`;
+  return `mongodb://${mongoauth}${mongohost}:27017/${mongodb}`;
 }
 
 function initMongo(mongoConnectionString: string) {
@@ -81,10 +81,14 @@ function initMongo(mongoConnectionString: string) {
   mongoose.connect(mongoConnectionString, {
     reconnectTries: Number.MAX_VALUE,
     keepAlive: 120,
-    useNewUrlParser: true });
-  let db = mongoose.connection;
-  db.on('error', console.error.bind(console, 'connection error:'));
-  db.once('open', function () {
-    winston.info('connected to db');
-  });
+    reconnectInterval: 1000,
+    poolSize: 10,
+    bufferMaxEntries: 0,
+    useNewUrlParser: true }).then(()=>{
+      winston.info('connected to db');
+      let db = mongoose.connection;
+      db.on('error', console.error.bind(console, 'connection error:'));
+    }).catch(err=>{
+      winston.error( err );
+    });
 }
