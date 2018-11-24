@@ -5,7 +5,7 @@
   "author": "Gorkem Ercan <gorkem.ercan@gmail.com>",
   "description": "Daily coding activities assistant",
   "dependencies": {
-    "@octokit/rest": "^15.8.2",
+    "@octokit/rest": "^16.0.1",
     "agenda": "^0.9.1",
     "coffee-script": "^1.12.7",
     "github-url-to-object": "4.0.4",
