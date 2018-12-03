@@ -33,7 +33,7 @@ export class ReminderService implements IMessageConsumer {
     agenda.on('ready', () => {
       logger.info('agenda ready');
       // every 6h on weekdays
-      agenda.every('*/360 * * * 1-5', 'checkStandups');
+      agenda.every('0 */6 * * 1-5', 'checkStandups');
       agenda.start();
       logger.info('agendas scheduled');
     });
