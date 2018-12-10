@@ -36,7 +36,7 @@
     "tslint": "^5.8.0",
     "mocha": "5.2.0",
     "hubot-test-helper": "1.5.1",
-    "chai": "3.5.0"
+    "chai": "4.2.0"
   },
   "scripts": {
     "compile": "tsc -watch -p ./",
