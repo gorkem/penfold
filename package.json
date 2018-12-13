@@ -36,13 +36,14 @@
     "tslint": "^5.8.0",
     "mocha": "5.2.0",
     "hubot-test-helper": "1.5.1",
-    "chai": "4.2.0"
+    "chai": "3.5.0",
+    "tslint-config-prettier": "1.17.0"
   },
   "scripts": {
     "compile": "tsc -watch -p ./",
     "build": "tsc -p ./",
     "test": "./node_modules/mocha/bin/mocha tests/**/*.ts --reporter spec --require ts-node/register",
-    "tslint": "gulp tslint",
+    "tslint": "./node_modules/.bin/gulp tslint",
     "start": "./bin/hubot --adapter matteruser --name penfold",
     "nodeshift": "nodeshift"
   }
