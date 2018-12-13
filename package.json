@@ -9,7 +9,7 @@
     "agenda": "^0.9.1",
     "coffee-script": "^1.12.7",
     "github-url-to-object": "4.0.4",
-    "hubot": "^2.19.0",
+    "hubot": "^3.1.1",
     "hubot-help": "^1.0.1",
     "hubot-matteruser": "^4.4.0",
     "hubot-scripts": "^2.17.2",
