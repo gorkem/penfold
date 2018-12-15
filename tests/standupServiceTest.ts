@@ -1,6 +1,8 @@
 
-import * as Helper from 'hubot-test-helper';
+// tslint:disable-next-line:no-implicit-dependencies
 import { expect } from 'chai';
+// tslint:disable-next-line:no-implicit-dependencies
+import * as Helper from 'hubot-test-helper';
 
 const helper = new Helper('../penfold.js');
 let room;

@@ -2,12 +2,11 @@ import * as mongoose from 'mongoose';
 import {IReport} from './model';
 
 interface IReportModel extends IReport, mongoose.Document { }
-let reportSchema = new mongoose.Schema({
-  user: String,
-  text: String,
-  created_at: Date,
+const reportSchema = new mongoose.Schema({
   channel: String,
-
+  created_at: Date,
+  text: String,
+  user: String
 });
-let Report = mongoose.model<IReportModel>('Report', reportSchema);
+const Report = mongoose.model<IReportModel>('Report', reportSchema);
 export = Report;

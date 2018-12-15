@@ -1,14 +1,15 @@
 import * as mongoose from 'mongoose';
 import {IChannel} from './model';
 
-let channelSchema = new mongoose.Schema({
+const channelSchema = new mongoose.Schema({
   id: String,
-  team: [String],
-  meetingTime: Date
+  meetingTime: Date,
+  team: [String]
 });
+// tslint:disable-next-line:no-empty-interface
 interface IChannelModel extends IChannel{}
 
-let Channel = mongoose.model<IChannelModel>('Channel', channelSchema);
+const Channel = mongoose.model<IChannelModel>('Channel', channelSchema);
 export = Channel;
 
 

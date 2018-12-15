@@ -9,10 +9,5 @@
 		"outDir": "./scripts",
 		"sourceMap": true,
     "noImplicitUseStrict": true
-	},
-	"exclude": [
-		"node_modules",
-		"server",
-		".vscode-test"
-	]
+	}
 }

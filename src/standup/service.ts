@@ -1,28 +1,28 @@
-import { IMessageConsumer, Response, Message, Robot} from '../protocol';
-import * as Report from './report';
-import * as Channel from './channel';
 import * as moment from 'moment';
 import * as logger from 'winston';
+import { IMessageConsumer, MessageUtilities} from '../protocol';
+import * as Channel from './channel';
 import { IChannel, IReport } from './model';
+import * as Report from './report';
 
 
 export class StandupService implements IMessageConsumer {
-  public static robot:Robot;
+  public static robot: Hubot.Robot<any>;
 
   constructor() {
-    //empty
+    // empty
   }
 
-  receive(response: Response) {
+  public receive(response: Hubot.Response<any>) {
     if (!response.message.room) {
       response.send('Get a room!!');
-    } else if (response.message.body.trim().length < 1) {
+    } else if (MessageUtilities.getMessageBody(response).trim().length < 1) {
       this.printStandupReport(response);
-    } else {//save a report
+    } else {// save a report
       this.updateChannel(response)
         .then((channel) => {
           return Promise.all([this.saveStandupReport(response),
-            this.addUserToChannelTeamIfNeeded(channel, response.message.userId)]);
+            this.addUserToChannelTeamIfNeeded(channel, response.message.user.id)]);
         })
         .catch(error => {
           logger.error(error);
@@ -30,7 +30,7 @@ export class StandupService implements IMessageConsumer {
     }
   }
 
-  private printStandupReport(response: Response): void {
+  private printStandupReport(response: Hubot.Response<any>): void {
     logger.debug('Print report for ', response.message.room);
     Channel.findOne({ id: response.message.room }).then(
       channel => {
@@ -43,7 +43,7 @@ export class StandupService implements IMessageConsumer {
         }
       }
     ).then(channel => {
-      let searchStart = this.getSearchStart();
+      const searchStart = this.getSearchStart();
       Report.find({ 'channel': channel.id, 'created_at': { $gt: searchStart.toDate() } }).sort({ created_at: -1 }).then(
         reports => {
           if (!reports || reports.length === 0) {
@@ -52,7 +52,7 @@ export class StandupService implements IMessageConsumer {
             return Promise.reject('No reports');
           } else {
             logger.debug(`${reports.length} reports found for channel ${channel.id}`);
-            let reportMessage = this.getReportMessage(reports);
+            const reportMessage = this.getReportMessage(reports);
             this.sendResponse(reportMessage, response);
             return Promise.resolve(reports);
           }
@@ -66,33 +66,32 @@ export class StandupService implements IMessageConsumer {
 
   private getReportMessage(reports: IReport[]) {
     let reportMessage = '';
-    let reportedUser = [];
+    const reportedUser = [];
     reports.forEach(report => {
       if (reportedUser.indexOf(report.user) < 0) {
         reportedUser.push(report.user);
-        let user = StandupService.robot.getUserForId(report.user);
-        let userName = user.getDisplayName();
-        let body = report.text;
-        let time = moment().utc().to(moment(report.created_at));
+        const user = StandupService.robot.brain.userForId(report.user);
+        const userName = user.getDisplayName();
+        const body = report.text;
+        const time = moment().utc().to(moment(report.created_at));
         reportMessage += `:memo: _${userName} reported ${time}_\n${body}\n***\n`;
       }
     });
     return reportMessage;
   }
-
   private getSearchStart(): moment.Moment {
-    let mu = moment().utc();
-    let hour = mu.startOf('hour');
+    const mu = moment().utc();
+    const hour = mu.startOf('hour');
     return hour.subtract(24, 'hour');
   }
 
-  private sendResponse(message: string, response: Response) {
-    let queryUser = StandupService.robot.getUserForId(response.message.userId);
+  private sendResponse(message: string, response: Hubot.Response<any>) {
+    const queryUser = StandupService.robot.brain.userForId(response.message.id);
     logger.debug(`Sending report ${message} to user ${queryUser}`);
     response.send(message);
   }
 
-  private updateChannel(response: Response): Promise<IChannel> {
+  private updateChannel(response: Hubot.Response<any>): Promise<IChannel> {
     return new Promise((resolve, reject) => {
       Channel.findOne({ id: response.message.room }, (error, channel) => {
         if (error) {
@@ -102,11 +101,11 @@ export class StandupService implements IMessageConsumer {
           logger.debug(`channel ${response.message.room} does not exist yet. Saving it.`);
           channel = new Channel();
           channel.id = response.message.room;
-          channel.team.push(response.message.userId);
+          channel.team.push(response.message.id);
           channel.save();
-        } else if (channel.team.indexOf(response.message.userId) === -1) { 
-          logger.debug(`adding user ${response.message.userId} to channel ${response.message.room}`);
-          channel.team.push(response.message.userId);
+        } else if (channel.team.indexOf(response.message.id) === -1) {
+          logger.debug(`adding user ${response.message.id} to channel ${response.message.room}`);
+          channel.team.push(response.message.id);
           channel.save();
         }
         return resolve(channel);
@@ -130,13 +129,13 @@ export class StandupService implements IMessageConsumer {
     }
   }
 
-  private saveStandupReport(response: Response): Promise<IReport> {
-    let channelID = response.message.room;
-    let message: Message = response.message;
-    let report = new Report();
+  private saveStandupReport(response: Hubot.Response<any>): Promise<IReport> {
+    const channelID = response.message.room;
+    const message: Hubot.Message = response.message;
+    const report = new Report();
     report.channel = channelID;
-    report.text = message.body.trim();
-    report.user = message.userId;
+    report.text = message.text.trim();
+    report.user = message.user.id;
     report.created_at = moment().utc().toDate();
     logger.debug('saving report', report);
     return report.save();
