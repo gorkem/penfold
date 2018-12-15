@@ -17,13 +17,12 @@
 // Author:
 //   Gorkem Ercan
 //
-import {StandupService} from './src/standup/service';
-import {ReminderService} from './src/reminder/service';
-import {IssueInfoService} from './src/github/issueInfo';
-import {Response,Robot} from './src/protocol';
 import * as mongoose from 'mongoose';
-import * as winston from 'winston';
 import * as Q from 'q';
+import * as winston from 'winston';
+import {IssueInfoService} from './src/github/issueInfo';
+import {ReminderService} from './src/reminder/service';
+import {StandupService} from './src/standup/service';
 
 declare module 'mongoose' { type Promise<T> = Q.Promise<T>; }
 
@@ -39,24 +38,21 @@ const standupService = new StandupService();
 const reminderService = new ReminderService(mongoConnectionString);
 const issueInfoService = new IssueInfoService();
 
-function Penfold(robot: any) {
-  let aRobot = new Robot(robot);
-  StandupService.robot=aRobot;
-  ReminderService.robot = aRobot;
-  robot.router.all('*', (req,resp)=>{
-    resp.send('hello');
-  });
 
-	robot.hear(/^\!*standup/i, (res: any) => {
-    standupService.receive(new Response(res));
+function Penfold(robot: Hubot.Robot<any>) {
+  StandupService.robot = robot;
+  ReminderService.robot = robot;
+
+	robot.hear(/^\!*standup/i, (res: Hubot.Response<any>) => {
+    standupService.receive(res);
 	});
 
-  robot.respond(/away|vacation/i,(res:any)=>{
-    reminderService.receive(new Response(res));
+  robot.respond(/away|vacation/i,(res: Hubot.Response<any>)=>{
+    reminderService.receive(res);
   });
 
-  robot.hear(/https:\/\/github\.com\/.+?\/issues\/\d*/i, (res: any) =>{
-    issueInfoService.receive(new Response(res));
+  robot.hear(/https:\/\/github\.com\/.+?\/issues\/\d*/i, (res: Hubot.Response<any>) =>{
+    issueInfoService.receive(res);
   });
 
 }
@@ -76,17 +72,18 @@ function getMongoConnectionString(): string {
   return `mongodb://${mongoauth}${mongohost}:27017/${mongodb}`;
 }
 
-function initMongo(mongoConnectionString: string) {
-  (<any>mongoose).Promise = Q.Promise;
-  mongoose.connect(mongoConnectionString, {
-    reconnectTries: Number.MAX_VALUE,
-    keepAlive: 120,
-    reconnectInterval: 1000,
-    poolSize: 10,
+function initMongo(conn: string) {
+  (mongoose as any).Promise = Q.Promise;
+  mongoose.connect(conn, {
     bufferMaxEntries: 0,
+    keepAlive: 120,
+    poolSize: 10,
+    reconnectInterval: 1000,
+    reconnectTries: Number.MAX_VALUE,
     useNewUrlParser: true }).then(()=>{
       winston.info('connected to db');
-      let db = mongoose.connection;
+      const db = mongoose.connection;
+      // tslint:disable-next-line:no-console
       db.on('error', console.error.bind(console, 'connection error:'));
     }).catch(err=>{
       winston.error( err );

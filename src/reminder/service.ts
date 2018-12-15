@@ -1,15 +1,15 @@
-import { IMessageConsumer, Response, Message, Robot} from '../protocol';
-import * as business from 'moment-business';
 import * as Agenda from 'agenda';
 import * as moment from 'moment';
+import * as business from 'moment-business';
 import * as logger from 'winston';
+import { IMessageConsumer} from '../protocol';
 import * as Channel from '../standup/channel';
-import * as Report from '../standup/report';
 import { IChannel } from '../standup/model';
+import * as Report from '../standup/report';
 
 
 export class ReminderService implements IMessageConsumer {
-  public static robot:Robot;
+  public static robot:Hubot.Robot<any>;
 
   private dbconn;
 
@@ -18,7 +18,7 @@ export class ReminderService implements IMessageConsumer {
     this.initAgenda();
   }
 
-  receive(response: Response): void {
+  public receive(response: Hubot.Response<any>): void {
     // let words = <string[]>response.message.body.split(/\s+/);
     // let user = response.findUser(response.message.userId).name;
     // if(words[0].charAt(0) === '@'){
@@ -27,7 +27,7 @@ export class ReminderService implements IMessageConsumer {
   }
 
   private initAgenda() {
-    let agenda = new Agenda({ db: { address: this.dbconn } });
+    const agenda = new Agenda({ db: { address: this.dbconn } });
     agenda.name('standup-service');
     agenda.define('checkStandups', checkStandups);
     agenda.on('ready', () => {
@@ -42,14 +42,14 @@ export class ReminderService implements IMessageConsumer {
 
 // ##### Agenda processors #########
 function checkStandups(job, done) {
+  // tslint:disable-next-line:no-console
   console.log('execute checkstandups');
-  let now = moment();
+  const now = moment();
   if (business.isWeekDay(now)) {
-    let checkback = now.isoWeekday() === 1 ? 48 : 24;
-    let querydate = now.subtract(checkback, 'hour');
+    const checkback = now.isoWeekday() === 1 ? 48 : 24;
+    const querydate = now.subtract(checkback, 'hour');
     Channel.where('team').exists().then(channels => {
-      for (let index = 0; index < channels.length; index++) {
-        let channel = channels[index];
+      for (const channel of channels) {
         channel.team.forEach(userId => {
           remindUser(channel, userId, querydate);
           }
@@ -64,7 +64,7 @@ function checkStandups(job, done) {
     Report.findOne({ 'channel': channel.id, 'user': userId, 'created_at': { $gt: querydate.toDate() } })
       .then(result => {
         if (!result) {
-          let user = ReminderService.robot.getUserForId(userId);
+          const user = ReminderService.robot.brain.userForId(userId);
           if (user) {
             ReminderService.robot.messageRoom(channel.id, `@${user.name} please remember to report your daily stand up`);
           }
