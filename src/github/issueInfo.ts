@@ -1,10 +1,11 @@
 import * as Github from '@octokit/rest';
 import * as gh from 'github-url-to-object';
+import { Response } from 'hubot';
 import { IMessageConsumer} from '../protocol';
 
 export class IssueInfoService implements IMessageConsumer {
 
-  public receive(response: Hubot.Response<any>): void {
+  public receive(response: Response<any>): void {
 
     const urls = response.message.text.match(/https:\/\/github\.com\/.+?\/issues\/\d*/g);
     urls.filter((item, pos)=> urls.indexOf(item) === pos).forEach(( url => {

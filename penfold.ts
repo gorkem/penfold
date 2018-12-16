@@ -17,6 +17,7 @@
 // Author:
 //   Gorkem Ercan
 //
+import { Response, Robot } from 'hubot';
 import * as mongoose from 'mongoose';
 import * as Q from 'q';
 import * as winston from 'winston';
@@ -39,19 +40,19 @@ const reminderService = new ReminderService(mongoConnectionString);
 const issueInfoService = new IssueInfoService();
 
 
-function Penfold(robot: Hubot.Robot<any>) {
+function Penfold(robot: Robot<any>) {
   StandupService.robot = robot;
   ReminderService.robot = robot;
 
-	robot.hear(/^\!*standup/i, (res: Hubot.Response<any>) => {
+	robot.hear(/^\!*standup/i, (res: Response<any>) => {
     standupService.receive(res);
 	});
 
-  robot.respond(/away|vacation/i,(res: Hubot.Response<any>)=>{
+  robot.respond(/away|vacation/i,(res: Response<any>)=>{
     reminderService.receive(res);
   });
 
-  robot.hear(/https:\/\/github\.com\/.+?\/issues\/\d*/i, (res: Hubot.Response<any>) =>{
+  robot.hear(/https:\/\/github\.com\/.+?\/issues\/\d*/i, (res: Response<any>) =>{
     issueInfoService.receive(res);
   });
 

@@ -8,6 +8,7 @@
 		"moduleResolution": "node",
 		"outDir": "./scripts",
 		"sourceMap": true,
-    "noImplicitUseStrict": true
+    "noImplicitUseStrict": true,
+    "typeRoots": ["node_modules/@types", "typings"]
 	}
 }

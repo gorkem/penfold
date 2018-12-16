@@ -5,6 +5,7 @@
   ],
 	"rules": {
 		"no-string-throw":true,
-		"no-require-imports": true
+    "no-require-imports": true,
+    "interface-name":false
 	}
 }

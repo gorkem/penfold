@@ -1,19 +1,21 @@
+import { Message, Response, Robot } from 'hubot'
 import * as moment from 'moment';
 import * as logger from 'winston';
-import { IMessageConsumer, MessageUtilities} from '../protocol';
+import { IMessageConsumer} from '../protocol';
+import { MessageUtilities } from '../utility/message-utilities';
 import * as Channel from './channel';
 import { IChannel, IReport } from './model';
 import * as Report from './report';
 
 
 export class StandupService implements IMessageConsumer {
-  public static robot: Hubot.Robot<any>;
+  public static robot: Robot<any>;
 
   constructor() {
     // empty
   }
 
-  public receive(response: Hubot.Response<any>) {
+  public receive(response: Response<any>) {
     if (!response.message.room) {
       response.send('Get a room!!');
     } else if (MessageUtilities.getMessageBody(response).trim().length < 1) {
@@ -30,7 +32,7 @@ export class StandupService implements IMessageConsumer {
     }
   }
 
-  private printStandupReport(response: Hubot.Response<any>): void {
+  private printStandupReport(response: Response<any>): void {
     logger.debug('Print report for ', response.message.room);
     Channel.findOne({ id: response.message.room }).then(
       channel => {
@@ -85,13 +87,13 @@ export class StandupService implements IMessageConsumer {
     return hour.subtract(24, 'hour');
   }
 
-  private sendResponse(message: string, response: Hubot.Response<any>) {
+  private sendResponse(message: string, response: Response<any>) {
     const queryUser = StandupService.robot.brain.userForId(response.message.id);
     logger.debug(`Sending report ${message} to user ${queryUser}`);
     response.send(message);
   }
 
-  private updateChannel(response: Hubot.Response<any>): Promise<IChannel> {
+  private updateChannel(response: Response<any>): Promise<IChannel> {
     return new Promise((resolve, reject) => {
       Channel.findOne({ id: response.message.room }, (error, channel) => {
         if (error) {
@@ -129,9 +131,9 @@ export class StandupService implements IMessageConsumer {
     }
   }
 
-  private saveStandupReport(response: Hubot.Response<any>): Promise<IReport> {
+  private saveStandupReport(response: Response<any>): Promise<IReport> {
     const channelID = response.message.room;
-    const message: Hubot.Message = response.message;
+    const message: Message = response.message;
     const report = new Report();
     report.channel = channelID;
     report.text = message.text.trim();

@@ -1,4 +1,5 @@
 import * as Agenda from 'agenda';
+import { Response, Robot } from 'hubot';
 import * as moment from 'moment';
 import * as business from 'moment-business';
 import * as logger from 'winston';
@@ -9,7 +10,7 @@ import * as Report from '../standup/report';
 
 
 export class ReminderService implements IMessageConsumer {
-  public static robot:Hubot.Robot<any>;
+  public static robot:Robot<any>;
 
   private dbconn;
 
@@ -18,7 +19,8 @@ export class ReminderService implements IMessageConsumer {
     this.initAgenda();
   }
 
-  public receive(response: Hubot.Response<any>): void {
+  public receive(response: Response<any>): void {
+    // ReminderService.robot.send(envelope, envelope)
     // let words = <string[]>response.message.body.split(/\s+/);
     // let user = response.findUser(response.message.userId).name;
     // if(words[0].charAt(0) === '@'){

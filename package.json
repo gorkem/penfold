@@ -27,6 +27,8 @@
   "devDependencies": {
     "@types/agenda": "^2.0.4",
     "@types/chai": "4.1.7",
+    "@types/express": "^4.16.0",
+    "@types/github-url-to-object": "^4.0.0",
     "@types/mocha": "^5.2.5",
     "@types/moment-business": "^0.1.4",
     "@types/mongoose": "^5.3.1",
@@ -39,7 +41,7 @@
     "mocha": "5.2.0",
     "tslint": "^5.8.0",
     "tslint-config-prettier": "1.17.0",
-    "typescript": "^2.4.1"
+    "typescript": "^3.2.2"
   },
   "scripts": {
     "compile": "tsc -watch -p ./",
