@@ -43,6 +43,10 @@ const issueInfoService = new IssueInfoService();
 function Penfold(robot: Robot<any>) {
   StandupService.robot = robot;
   ReminderService.robot = robot;
+  // Health-check
+  robot.router.get('/health-check', (req,resp) => {
+    resp.end('OK');
+  })
 
 	robot.hear(/^\!*standup/i, (res: Response<any>) => {
     standupService.receive(res);
