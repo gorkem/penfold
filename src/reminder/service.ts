@@ -44,8 +44,7 @@ export class ReminderService implements IMessageConsumer {
 
 // ##### Agenda processors #########
 function checkStandups(job, done) {
-  // tslint:disable-next-line:no-console
-  console.log('execute checkstandups');
+  logger.debug('execute checkstandups');
   const now = moment();
   if (business.isWeekDay(now)) {
     const checkback = now.isoWeekday() === 1 ? 48 : 24;
