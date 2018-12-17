@@ -88,8 +88,8 @@ export class StandupService implements IMessageConsumer {
   }
 
   private sendResponse(message: string, response: Response<any>) {
-    const queryUser = StandupService.robot.brain.userForId(response.message.id);
-    logger.debug(`Sending report ${message} to user ${queryUser}`);
+    const queryUser:User = StandupService.robot.brain.userForId(response.message.id);
+    logger.debug(`Sending report ${message} to user ${queryUser.name}`);
     response.send(message);
   }
 
