@@ -1,4 +1,4 @@
-import { Message, Response, Robot } from 'hubot'
+import { Message, Response, Robot, User } from 'hubot'
 import * as moment from 'moment';
 import * as logger from 'winston';
 import { IMessageConsumer} from '../protocol';
@@ -72,8 +72,8 @@ export class StandupService implements IMessageConsumer {
     reports.forEach(report => {
       if (reportedUser.indexOf(report.user) < 0) {
         reportedUser.push(report.user);
-        const user = StandupService.robot.brain.userForId(report.user);
-        const userName = user.getDisplayName();
+        const user:User = StandupService.robot.brain.userForId(report.user);
+        const userName = this.getDisplayName(user);
         const body = report.text;
         const time = moment().utc().to(moment(report.created_at));
         reportMessage += `:memo: _${userName} reported ${time}_\n${body}\n***\n`;
@@ -141,5 +141,12 @@ export class StandupService implements IMessageConsumer {
     report.created_at = moment().utc().toDate();
     logger.debug('saving report', report);
     return report.save();
+  }
+  private getDisplayName(user:User): string {
+    if (user.real_name && user.real_name.trim().length > 0) {
+      return user.real_name;
+    } else {
+      return user.name;
+    }
   }
 }

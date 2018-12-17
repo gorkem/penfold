@@ -16,6 +16,11 @@ declare module 'hubot' {
     room: string;
   }
 
+  interface User {
+    real_name: string
+    email_address: string
+  }
+
   interface Robot<A> {
     router : Application
 
