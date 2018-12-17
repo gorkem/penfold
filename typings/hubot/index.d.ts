@@ -4,49 +4,20 @@
 //                 Kees C. Bakker <https://github.com/KeesCBakker>
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
 
-declare namespace Hubot {
-  class Brain {
-    userForId(id: any): any;
-    userForName(name: string): any;
-  }
+import * as hubot from 'hubot'
+import { Application } from 'express'
 
-  class User {
-    id: any;
-    name: string;
-  }
+declare module 'hubot' {
 
-  class Message {
+  interface Message {
     user: User;
     text: string;
     id: string;
     room: string;
   }
 
-  class Response<R> {
-    match: RegExpMatchArray;
-    message: Message;
-
-    constructor(robot: R, message: Message, match: RegExpMatchArray);
-    send(...strings: string[]): void;
-    reply(...strings: string[]): void;
-    random<T>(items: T[]): T;
-  }
-
-  type ListenerCallback<R> = (response: Response<R>) => void;
-
-  class Robot<A> {
-    alias: string;
-    brain: Brain;
-    name: string;
-    readonly adapter: A;
-
-    constructor(adapterPath: string, adapter: string, httpd: boolean, name: string, alias?: string);
-    hear(regex: RegExp, callback: ListenerCallback<this>): void;
-    hear(regex: RegExp, options: any, callback: ListenerCallback<this>): void;
-    helpCommands(): string[];
-    loadFile(directory: string, fileName: string): void;
-    respond(regex: RegExp, callback: ListenerCallback<this>): void;
-    respond(regex: RegExp, options: any, callback: ListenerCallback<this>): void;
+  interface Robot<A> {
+    router : Application
 
     /** Public: A helper send function to message a room that the robot is in.
       *
@@ -58,8 +29,4 @@ declare namespace Hubot {
     messageRoom(room: string, ...strings: string[]): void;
   }
 }
-// Compatibility with CommonJS syntax exported by Hubot's CoffeeScript.
-// tslint:disable-next-line export-just-namespace
-export = Hubot;
-export as namespace Hubot;
 
