@@ -6,6 +6,7 @@
 
 import * as hubot from 'hubot'
 import { Application } from 'express'
+import { AttachmentEnvelope } from '../../src/utility/attachment-envelope';
 
 declare module 'hubot' {
 
@@ -19,6 +20,11 @@ declare module 'hubot' {
   interface User {
     real_name: string
     email_address: string
+  }
+
+  interface Response<R>{
+    robot : Robot<any>
+    send(envelope:AttachmentEnvelope) : void
   }
 
   interface Robot<A> {

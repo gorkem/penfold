@@ -88,7 +88,7 @@ export class StandupService implements IMessageConsumer {
   }
 
   private sendResponse(message: string, response: Response<any>) {
-    const queryUser:User = StandupService.robot.brain.userForId(response.message.id);
+    const queryUser:User = StandupService.robot.brain.userForId(response.message.user.id);
     logger.debug(`Sending report ${message} to user ${queryUser.name}`);
     response.send(message);
   }
@@ -103,11 +103,11 @@ export class StandupService implements IMessageConsumer {
           logger.debug(`channel ${response.message.room} does not exist yet. Saving it.`);
           channel = new Channel();
           channel.id = response.message.room;
-          channel.team.push(response.message.id);
+          channel.team.push(response.message.user.id);
           channel.save();
-        } else if (channel.team.indexOf(response.message.id) === -1) {
-          logger.debug(`adding user ${response.message.id} to channel ${response.message.room}`);
-          channel.team.push(response.message.id);
+        } else if (channel.team.indexOf(response.message.user.id) === -1) {
+          logger.debug(`adding user ${response.message.user.id} to channel ${response.message.room}`);
+          channel.team.push(response.message.user.id);
           channel.save();
         }
         return resolve(channel);
