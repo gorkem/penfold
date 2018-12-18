@@ -42,7 +42,7 @@ const issueInfoService = new IssueInfoService();
 
 function Penfold(robot: Robot<any>) {
   StandupService.robot = robot;
-  ReminderService.robot = robot;
+  // ReminderService.robot = robot;
   // Health-check
   robot.router.get('/health-check', (req,resp) => {
     resp.end('OK');
@@ -53,7 +53,7 @@ function Penfold(robot: Robot<any>) {
 	});
 
   robot.respond(/away|vacation/i,(res: Response<any>)=>{
-    reminderService.receive(res);
+    // reminderService.receive(res);
   });
 
   robot.hear(/https:\/\/github\.com\/.+?\/issues\/\d*/i, (res: Response<any>) =>{
