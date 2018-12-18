@@ -12,7 +12,7 @@ import * as Report from '../standup/report';
 export class ReminderService implements IMessageConsumer {
   public static robot:Robot<any>;
 
-  private dbconn;
+  private dbconn:string;
 
   constructor(dbConnectionString:string){
     this.dbconn = dbConnectionString;
