@@ -42,7 +42,8 @@
     "mocha": "5.2.0",
     "tslint": "^5.8.0",
     "tslint-config-prettier": "1.17.0",
-    "typescript": "^3.2.2"
+    "typescript": "^3.2.2",
+    "co": "^4.6.0"
   },
   "scripts": {
     "compile": "tsc -watch -p ./",

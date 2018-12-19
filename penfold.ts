@@ -27,17 +27,16 @@ import {StandupService} from './src/standup/service';
 
 declare module 'mongoose' { type Promise<T> = Q.Promise<T>; }
 
-  winston.configure({
+winston.configure({
   transports: [
-    new (winston.transports.Console)({ level: 'debug' }),
+    new (winston.transports.Console)({ level: 'debug' })
   ]
 });
 
 const mongoConnectionString = getMongoConnectionString();
-initMongo(mongoConnectionString);
-const standupService = new StandupService();
-const reminderService = new ReminderService(mongoConnectionString);
-const issueInfoService = new IssueInfoService();
+let standupService:StandupService;
+let issueInfoService:IssueInfoService;
+// const reminderService = new ReminderService(mongoConnectionString);
 
 
 function Penfold(robot: Robot<any>) {
@@ -49,6 +48,11 @@ function Penfold(robot: Robot<any>) {
   })
 
 	robot.hear(/^\!*standup/i, (res: Response<any>) => {
+    initMongo(mongoConnectionString);
+    if(!standupService)
+    {
+      standupService = new StandupService();
+    }
     standupService.receive(res);
 	});
 
@@ -57,6 +61,9 @@ function Penfold(robot: Robot<any>) {
   });
 
   robot.hear(/https:\/\/github\.com\/.+?\/issues\/\d*/i, (res: Response<any>) =>{
+    if(!issueInfoService){
+      issueInfoService = new IssueInfoService();
+    }
     issueInfoService.receive(res);
   });
 
@@ -89,7 +96,7 @@ function initMongo(conn: string) {
       winston.info('connected to db');
       const db = mongoose.connection;
       // tslint:disable-next-line:no-console
-      db.on('error', console.error.bind(console, 'connection error:'));
+      db.on('error', (err) => winston.error(err));
     }).catch(err=>{
       winston.error( err );
     });
