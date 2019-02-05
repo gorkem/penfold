@@ -35,7 +35,13 @@
     },
     {
       "label": "test",
-      "command": "test",
+      "type": "shell",
+      // we run the custom script "test" as defined in package.json
+      "command": "npm",
+      "args": [
+        "run",
+        "test"
+      ],
       "group": {
         "kind": "test",
         "isDefault": true
