@@ -20,6 +20,6 @@ tools:
     type: kubernetes
     local: .openshiftio/service.yaml
     selector:
-        app.kubernetes.io/name: penfold-bot
+        app.kubernetes.io/name: mongodb
         app.kubernetes.io/part-of: penfold-bot
         app: penfold-bot
