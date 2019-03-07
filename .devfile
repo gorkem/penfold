@@ -1,0 +1,23 @@
+---
+specVersion: 0.0.1
+name: penfold-bot
+projects:
+  - name: penfold
+    source:
+      type: git
+      location: 'https://github.com/gorkem/penfold.git'
+tools:
+  - name: theia-editor
+    type: cheEditor
+    id: org.eclipse.che.editor.theia:master
+  - name: exec-plugin
+    type: chePlugin
+    id: che-machine-exec-plugin:0.0.1
+  - name: typescript
+    type: chePlugin
+    id: ms-vscode.typescript:1.30.2
+  -  local: .openshiftio/service.yaml
+     selector:
+        app.kubernetes.io/name: penfold-bot
+        app.kubernetes.io/part-of: penfold-bot
+        app: penfold-bot
