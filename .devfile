@@ -16,8 +16,10 @@ tools:
   - name: typescript
     type: chePlugin
     id: ms-vscode.typescript:1.30.2
-  -  local: .openshiftio/service.yaml
-     selector:
+  - name: mysql
+    type: kubernetes
+    local: .openshiftio/service.yaml
+    selector:
         app.kubernetes.io/name: penfold-bot
         app.kubernetes.io/part-of: penfold-bot
         app: penfold-bot
