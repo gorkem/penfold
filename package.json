@@ -8,6 +8,7 @@
     "@octokit/rest": "^16.3.0",
     "agenda": "^2.0.2",
     "coffee-script": "^1.12.7",
+    "cross-env": "^5.2.0",
     "github-url-to-object": "4.0.4",
     "hubot": "^3.1.1",
     "hubot-help": "^1.0.1",
@@ -48,7 +49,7 @@
   "scripts": {
     "compile": "tsc -watch -p ./",
     "build": "tsc -p ./",
-    "test": "./node_modules/mocha/bin/mocha tests/**/*.ts --reporter spec --require ts-node/register",
+    "test": "cross-env MONGODB_HOST=localhost mocha tests/**/*.ts --reporter spec --require ts-node/register",
     "tslint": "./node_modules/.bin/gulp tslint",
     "start": "./bin/hubot --adapter matteruser --name penfold",
     "nodeshift": "nodeshift"
