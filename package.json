@@ -6,7 +6,7 @@
   "description": "Daily coding activities assistant",
   "dependencies": {
     "@octokit/rest": "^16.3.0",
-    "agenda": "^2.0.2",
+    "agenda": "^4.0.1",
     "coffee-script": "^1.12.7",
     "github-url-to-object": "4.0.4",
     "hubot": "^3.1.1",
